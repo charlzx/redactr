@@ -186,7 +186,7 @@ textarea {
    transform: scale(.9)
 }
 
-@media  (max-width: 885px) {
+@media (max-width: 885px) {
    body {
       padding: 2rem 15%;
    }
@@ -202,24 +202,31 @@ textarea {
    }
 }
 
-@media  (max-width: 580px) {
+@media (max-width: 580px) {
    body {
       padding: 2rem 7.5%;
    }
 }
 
-@media  (max-width: 415px) {
+@media (max-width: 415px) {
    body {
       padding: 2rem 5%;
    }
 
-   /* main { */
-      /* width: 100%; */
-      /* margin: auto; */
-      /* overflow: hidden; */
-   /* } */
-
    #stats {
       grid-template-columns: 1fr;
    }
+}
+
+@media (min-width: 1650px) {
+   body {
+      padding: 2rem 0;
+   }
+
+   h1, main {
+      width: 1400px;
+      margin-left: auto;
+      margin-right: auto;
+   }
+   
 }
