@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&display=swap');
 
 * {
    margin: 0;
@@ -17,15 +18,25 @@ body {
    padding: 2rem 10%;
 }
 
+h1 {
+   color: #202020;
+   margin-bottom: 30px;
+   font-family: 'Cinzel Decorative', cursive;
+}
+
 main {
    display: grid;
    grid-template-columns: 1fr 1fr;
    gap: 24px;
 }
 
+hr {
+   display: none;
+}
+
 /* inputs section */
 #inputs {
-   padding: 56px 32px;
+   padding: 24px 32px;
    background-color: #FFFFFF;
    border-radius: 5px;
    height: fit-content;
@@ -45,6 +56,7 @@ textarea {
    resize: vertical;
    text-align: justify;
    padding: 10px 15px;
+   columns: 30;
 }
 
 #input-text {
@@ -145,6 +157,9 @@ textarea {
    align-items: center;
    min-height: 200px;
    align-items: flex-start;
+   word-wrap: break-word;
+   word-break: break-word;
+   text-align: justify;
 }
 
 #loader {
@@ -169,4 +184,42 @@ textarea {
 
 #copy:active {
    transform: scale(.9)
+}
+
+@media  (max-width: 885px) {
+   body {
+      padding: 2rem 15%;
+   }
+
+   main {
+      grid-template-columns: 1fr;
+      gap: 30px;
+   }
+
+   hr {
+      display: initial;
+      border: 1px dashed #08AEEA;
+   }
+}
+
+@media  (max-width: 580px) {
+   body {
+      padding: 2rem 7.5%;
+   }
+}
+
+@media  (max-width: 415px) {
+   body {
+      padding: 2rem 5%;
+   }
+
+   /* main { */
+      /* width: 100%; */
+      /* margin: auto; */
+      /* overflow: hidden; */
+   /* } */
+
+   #stats {
+      grid-template-columns: 1fr;
+   }
 }

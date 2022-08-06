@@ -23,9 +23,10 @@ function filterText(e){
    result.innerHTML = ''
    loader.style.display = "block"
 
-   let startTime = Date.now()
-
+   
    setTimeout(() => {
+      // timer for when the process start running
+      let startTime = Date.now()
       loader.style.display = "none"
 
       let oldText = inputText.value
@@ -37,10 +38,8 @@ function filterText(e){
          
          let scan;
          for (let i = 0; i < searchText.length; i++){
-         
             let re = new RegExp(searchText[i], 'gi')
    
-            // console.log(re)
             if (replacementSymbol.value != ""){
                scan = oldText.replaceAll(re, `${replacementSymbol.value}`)
             } else {
@@ -62,15 +61,20 @@ function filterText(e){
          result.innerHTML = `${newText}`
          scrambled.innerHTML = `${wordsScrambled}`
    
+         // timer for when the process completes
          let endTime = Date.now()
    
-         console.log(startTime)
-         console.log(endTime)
+         // console.log(startTime)
+         // console.log(endTime)
 
-         let totalTime = Math.round((endTime - startTime) / 100)
+         let totalTime = ((endTime - startTime) / 10)
+         // console.log(totalTime)
          time.innerHTML = `${totalTime}s`
    
       } else {
+         // words scanned
+         let wordsScanned = oldText.split(/[ ,]/).length
+         scanned.innerHTML = wordsScanned
          
          result.innerHTML = oldText
       }
@@ -84,9 +88,8 @@ copyText.onclick = () => {
    console.log(result.innerHTML)
    navigator.clipboard.writeText(result.innerHTML)
    copyText.innerHTML = 'COPIED'
-}
-
-setTimeout(() => {
-   copyText.innerHTML = 'COPY'
    
-}, 300)
+   setTimeout(() => {
+      copyText.innerHTML = 'COPY'
+   }, 3000)
+}
