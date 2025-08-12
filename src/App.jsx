@@ -125,7 +125,7 @@ const App = () => {
     return (
         <div className="bg-gray-50 text-gray-800 min-h-screen font-sans">
             <div className="max-w-7xl mx-auto">
-                <header className="py-8 text-center"><h1 className="text-4xl sm:text-5xl font-bold text-gray-800">Redactr</h1><p className="text-gray-500 mt-2">A Modern, Client-Side Text Redaction Tool</p></header>
+                <header className="py-8 text-center"><h1 className="text-4xl sm:text-5xl font-bold text-gray-800">Redacta</h1><p className="text-gray-500 mt-2">A Modern, Client-Side Text Redaction Tool</p></header>
                 <div className="lg:grid lg:grid-cols-3 lg:gap-8 lg:items-start">
                     <div className="lg:col-span-1 lg:sticky lg:top-8 space-y-8 m-4 lg:mt-0">
                         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
