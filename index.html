@@ -1,76 +1,13 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-
-<head>
-  <meta charset="UTF-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Redactr</title>
-
-  <link rel="stylesheet" href="style.css">
-</head>
-
-<body>
-
-  <h1>Redactr</h1>
-
-  <main>
-    <form id="inputs">
-      <div>
-        <label for="input-text">Word</label>
-        <textarea id="input-text" placeholder="Paste your words here."></textarea>
-      </div>
-
-      <div>
-        <label for="replaced-text">Scan words</label>
-        <textarea id="replaced-text" placeholder="Use commas (,) to seperate words."></textarea>
-      </div>
-
-      <div>
-        <label for="replacement">Replacement character</label>
-        <input type="text" id="replacement">
-      </div>
-
-      <div id="submit-div">
-        <input type="submit" value="Process Scan" id="submit">
-      </div>
-    </form>
-
-    <hr>
-
-    <section id="outputs">
-      <div id="stats">
-        <div>
-          <p>TOTAL WORDS SCANNED</p>
-          <p id="scanned">0</p>
-        </div>
-        <div>
-          <p>TOTAL WORDS SCRAMBLED</p>
-          <p id="scrambled">0</p>
-        </div>
-        <div>
-          <p>TOTAL PROCESSING TIME</p>
-          <p id="time">0s</p>
-        </div>
-      </div>
-
-      <div id="results">
-        <h3>OUTPUT</h3>
-        <button id="copy">COPY</button>
-        <div id="new-text">
-          <p id="resultText"></p>
-          <img src="loading.svg" id="loader">
-
-        </div>
-      </div>
-    </section>
-  </main>
-
-
-  <!-- // ============= EEND DO NOT EDIT ============== // -->
-  <script src="index.mjs" type="module"></script>
-  <!-- // ============= EEND DO NOT EDIT ============== // -->
-  <script src="script.js"></script>
-</body>
-
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vite + React</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
 </html>
