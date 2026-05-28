@@ -147,6 +147,8 @@ const App = () => {
     const [piiSuggestions, setPiiSuggestions] = useState([]);
     const [isScannerOpen, setIsScannerOpen] = useState(false);
     const [isScanning, setIsScanning] = useState(false);
+    const [selectedText, setSelectedText] = useState('');
+    const textareaRef = useRef(null);
 
     // ── Dashboard UI state ────────────────────────────────────────────────────
     const [searchQuery, setSearchQuery] = useState('');
@@ -457,6 +459,48 @@ const App = () => {
 
         setWordsToRedact(rulesArr.join(', '));
         setPiiSuggestions([]);
+    };
+
+    const handleTextareaSelection = (e) => {
+        const start = e.target.selectionStart;
+        const end = e.target.selectionEnd;
+        if (start !== undefined && end !== undefined && start !== end) {
+            const selected = e.target.value.substring(start, end).trim();
+            if (selected.length > 0 && selected.length < 100) {
+                setSelectedText(selected);
+                return;
+            }
+        }
+        setSelectedText('');
+    };
+
+    const handleAddSelectionAsRule = () => {
+        if (!selectedText) return;
+        const pat = selectedText.trim();
+        let newWordsStr = wordsToRedact.trim();
+        
+        if (newWordsStr) {
+            const rulesArr = newWordsStr.split(',').map(s => s.trim());
+            const index = rulesArr.findIndex(r => {
+                const p = r.split(':')[0].trim();
+                return p.toLowerCase() === pat.toLowerCase();
+            });
+
+            if (index === -1) {
+                rulesArr.push(pat);
+            }
+            newWordsStr = rulesArr.join(', ');
+        } else {
+            newWordsStr = pat;
+        }
+
+        setWordsToRedact(newWordsStr);
+        setSelectedText('');
+
+        if (textareaRef.current) {
+            textareaRef.current.selectionStart = textareaRef.current.selectionEnd;
+            textareaRef.current.focus();
+        }
     };
 
     // ── File handlers ─────────────────────────────────────────────────────────
@@ -1218,8 +1262,11 @@ const App = () => {
                         </div>
 
                         <textarea
+                            ref={textareaRef}
                             value={originalText}
                             onChange={e => { setOriginalText(e.target.value); if (!e.target.value) setImportedFileName(''); }}
+                            onMouseUp={handleTextareaSelection}
+                            onKeyUp={handleTextareaSelection}
                             placeholder="Type or paste your content here..."
                             style={{
                                 width: '100%', boxSizing: 'border-box', minHeight: '260px',
@@ -1234,6 +1281,84 @@ const App = () => {
                             <p style={{ padding: '0 16px 12px', fontSize: '0.75rem', color: 'hsl(var(--destructive))', display: 'flex', alignItems: 'center', gap: '5px' }}>
                                 ⚠ {processingError}
                             </p>
+                        )}
+                        {selectedText && (
+                            <div
+                                className="animate-scale-in"
+                                style={{
+                                    position: 'absolute',
+                                    bottom: '16px',
+                                    left: 0,
+                                    right: 0,
+                                    margin: '0 auto',
+                                    width: 'max-content',
+                                    maxWidth: 'calc(100% - 32px)',
+                                    zIndex: 10,
+                                    background: 'hsl(var(--card) / 0.95)',
+                                    backdropFilter: 'blur(8px)',
+                                    border: '1px solid hsl(var(--accent) / 0.3)',
+                                    boxShadow: '0 8px 30px hsl(var(--accent) / 0.12)',
+                                    borderRadius: '8px',
+                                    padding: '8px 12px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '10px',
+                                    transition: 'all 0.15s ease'
+                                }}
+                            >
+                                <span style={{ fontSize: '0.8rem', color: 'hsl(var(--muted-foreground))' }}>
+                                    Redact <strong style={{ color: 'hsl(var(--foreground))', background: 'hsl(var(--accent) / 0.08)', padding: '2px 6px', borderRadius: '4px', border: '1px solid hsl(var(--accent) / 0.2)', fontSize: '0.75rem', fontFamily: 'ui-monospace, monospace' }}>{selectedText.length > 15 ? selectedText.slice(0, 15) + '...' : selectedText}</strong>?
+                                </span>
+                                <div style={{ display: 'flex', gap: '6px' }}>
+                                    <button
+                                        type="button"
+                                        onClick={handleAddSelectionAsRule}
+                                        style={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '4px',
+                                            padding: '4px 10px',
+                                            background: 'hsl(var(--accent))',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '5px',
+                                            fontSize: '0.75rem',
+                                            fontWeight: 600,
+                                            cursor: 'pointer',
+                                            transition: 'opacity 0.15s'
+                                        }}
+                                        onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
+                                        onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+                                    >
+                                        <Plus size={12} />
+                                        Add Rule
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setSelectedText('');
+                                            if (textareaRef.current) {
+                                                textareaRef.current.selectionStart = textareaRef.current.selectionEnd;
+                                                textareaRef.current.focus();
+                                            }
+                                        }}
+                                        style={{
+                                            background: 'transparent',
+                                            border: '1px solid hsl(var(--border))',
+                                            borderRadius: '5px',
+                                            color: 'hsl(var(--muted-foreground))',
+                                            padding: '4px 8px',
+                                            fontSize: '0.75rem',
+                                            cursor: 'pointer',
+                                            transition: 'background 0.15s'
+                                        }}
+                                        onMouseEnter={e => e.currentTarget.style.background = 'hsl(var(--muted))'}
+                                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
                         )}
                     </div>
 
