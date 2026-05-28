@@ -144,6 +144,9 @@ const App = () => {
     const [isConfigRulesOpen, setIsConfigRulesOpen] = useState(true);
     const [isActiveRulesOpen, setIsActiveRulesOpen] = useState(true);
     const [isOptionsOpen, setIsOptionsOpen] = useState(true);
+    const [piiSuggestions, setPiiSuggestions] = useState([]);
+    const [isScannerOpen, setIsScannerOpen] = useState(false);
+    const [isScanning, setIsScanning] = useState(false);
 
     // ── Dashboard UI state ────────────────────────────────────────────────────
     const [searchQuery, setSearchQuery] = useState('');
@@ -363,6 +366,97 @@ const App = () => {
             return p.toLowerCase() !== patternToDelete.toLowerCase();
         });
         setWordsToRedact(filteredRules.join(', '));
+    };
+
+    const handleScanText = () => {
+        if (!originalText) {
+            setPiiSuggestions([]);
+            return;
+        }
+
+        setIsScanning(true);
+        setTimeout(() => {
+            const text = originalText;
+            const suggestions = [];
+
+            const addUnique = (match, type, label) => {
+                const pat = match.trim();
+                if (!pat) return;
+                if (!suggestions.some(s => s.pattern.toLowerCase() === pat.toLowerCase())) {
+                    suggestions.push({ pattern: pat, replacement: '[REDACTED]', type, label });
+                }
+            };
+
+            const emails = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g) || [];
+            emails.forEach(e => addUnique(e, 'email', 'Email'));
+
+            const phones = text.match(/(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g) || [];
+            phones.forEach(p => addUnique(p, 'phone', 'Phone'));
+
+            const cards = text.match(/\b\d{4}[-.\s]?\d{4}[-.\s]?\d{4}[-.\s]?\d{4}\b/g) || [];
+            cards.forEach(c => addUnique(c, 'card', 'Card'));
+
+            const ssns = text.match(/\b\d{3}-\d{2}-\d{4}\b/g) || [];
+            ssns.forEach(s => addUnique(s, 'ssn', 'SSN'));
+
+            setPiiSuggestions(suggestions);
+            setIsScanning(false);
+            setIsScannerOpen(true);
+        }, 400);
+    };
+
+    const handleAcceptSuggestion = (suggestion) => {
+        const pat = suggestion.pattern;
+        const rep = suggestion.replacement;
+        const newRuleStr = rep === '***' ? pat : `${pat}:${rep}`;
+
+        let newWordsStr = wordsToRedact.trim();
+        if (newWordsStr) {
+            const rulesArr = newWordsStr.split(',').map(s => s.trim());
+            const index = rulesArr.findIndex(r => {
+                const p = r.split(':')[0].trim();
+                return p.toLowerCase() === pat.toLowerCase();
+            });
+
+            if (index !== -1) {
+                rulesArr[index] = newRuleStr;
+            } else {
+                rulesArr.push(newRuleStr);
+            }
+            newWordsStr = rulesArr.join(', ');
+        } else {
+            newWordsStr = newRuleStr;
+        }
+
+        setWordsToRedact(newWordsStr);
+        setPiiSuggestions(prev => prev.filter(s => s.pattern !== pat));
+    };
+
+    const handleAcceptAllSuggestions = () => {
+        if (piiSuggestions.length === 0) return;
+
+        let newWordsStr = wordsToRedact.trim();
+        const rulesArr = newWordsStr ? newWordsStr.split(',').map(s => s.trim()) : [];
+
+        piiSuggestions.forEach(s => {
+            const pat = s.pattern;
+            const rep = s.replacement;
+            const newRuleStr = rep === '***' ? pat : `${pat}:${rep}`;
+
+            const index = rulesArr.findIndex(r => {
+                const p = r.split(':')[0].trim();
+                return p.toLowerCase() === pat.toLowerCase();
+            });
+
+            if (index !== -1) {
+                rulesArr[index] = newRuleStr;
+            } else {
+                rulesArr.push(newRuleStr);
+            }
+        });
+
+        setWordsToRedact(rulesArr.join(', '));
+        setPiiSuggestions([]);
     };
 
     // ── File handlers ─────────────────────────────────────────────────────────
@@ -950,6 +1044,92 @@ const App = () => {
                                                     </button>
                                                 </span>
                                             ))
+                                        )}
+                                    </div>
+                                ))}
+
+                                {/* Accordion: PII Auto-Scanner */}
+                                {renderAccordionSection("PII Auto-Scanner", isScannerOpen, () => setIsScannerOpen(!isScannerOpen), (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingTop: '4px' }}>
+                                        <button
+                                            type="button"
+                                            onClick={handleScanText}
+                                            disabled={isScanning || !originalText}
+                                            style={{
+                                                width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                                                padding: '8px 10px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 600,
+                                                cursor: (!originalText || isScanning) ? 'not-allowed' : 'pointer', border: '1px solid hsl(var(--border))',
+                                                background: 'hsl(var(--background))', color: 'hsl(var(--foreground))',
+                                                opacity: (!originalText || isScanning) ? 0.6 : 1, transition: 'all 0.15s'
+                                            }}
+                                            onMouseEnter={e => { if (originalText && !isScanning) e.currentTarget.style.background = 'hsl(var(--muted))'; }}
+                                            onMouseLeave={e => { e.currentTarget.style.background = 'hsl(var(--background))'; }}
+                                        >
+                                            {isScanning ? (
+                                                <>
+                                                    <Loader size={12} style={{ animation: 'spin 1s linear infinite' }} />
+                                                    Scanning...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Search size={12} />
+                                                    Scan Document
+                                                </>
+                                            )}
+                                        </button>
+
+                                        {piiSuggestions.length > 0 && (
+                                            <div style={{ borderTop: '1px solid hsl(var(--border))', paddingTop: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                    <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'hsl(var(--muted-foreground))' }}>
+                                                        Found {piiSuggestions.length} sensitive patterns
+                                                    </span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleAcceptAllSuggestions}
+                                                        style={{ background: 'transparent', border: 'none', color: 'hsl(var(--accent))', fontSize: '0.7rem', fontWeight: 600, cursor: 'pointer' }}
+                                                    >
+                                                        Accept All
+                                                    </button>
+                                                </div>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', maxHeight: '140px', overflowY: 'auto', paddingRight: '2px' }}>
+                                                    {piiSuggestions.map((sug, idx) => (
+                                                        <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 8px', background: 'hsl(var(--muted) / 0.2)', border: '1px solid hsl(var(--border))', borderRadius: '4px' }}>
+                                                            <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                                                                <span style={{ fontSize: '0.75rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '160px', color: 'hsl(var(--foreground))' }} title={sug.pattern}>
+                                                                    {sug.pattern}
+                                                                </span>
+                                                                <span style={{ fontSize: '0.625rem', color: 'hsl(var(--muted-foreground))' }}>
+                                                                    {sug.label} suggestion
+                                                                </span>
+                                                            </div>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleAcceptSuggestion(sug)}
+                                                                style={{
+                                                                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                                    width: '20px', height: '20px', borderRadius: '4px', border: 'none',
+                                                                    background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))',
+                                                                    cursor: 'pointer', fontSize: '0.75rem'
+                                                                }}
+                                                            >
+                                                                +
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {!originalText && (
+                                            <span style={{ fontSize: '0.6875rem', color: 'hsl(var(--muted-foreground))', fontStyle: 'italic', textAlign: 'center' }}>
+                                                Add text to active document to scan.
+                                            </span>
+                                        )}
+                                        {originalText && piiSuggestions.length === 0 && !isScanning && (
+                                            <span style={{ fontSize: '0.6875rem', color: 'hsl(var(--muted-foreground))', fontStyle: 'italic', textAlign: 'center' }}>
+                                                Scan to auto-detect emails, phones, credit cards.
+                                            </span>
                                         )}
                                     </div>
                                 ))}
