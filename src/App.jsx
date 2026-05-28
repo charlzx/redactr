@@ -118,6 +118,8 @@ const App = () => {
     const [isControlsCollapsed, setIsControlsCollapsed] = useState(false);
     const [isOriginalCollapsed, setIsOriginalCollapsed] = useState(false);
     const [isOutputCollapsed, setIsOutputCollapsed] = useState(false);
+    const [isEditingTitle, setIsEditingTitle] = useState(false);
+    const [tempTitle, setTempTitle] = useState('');
 
     // ── Dashboard UI state ────────────────────────────────────────────────────
     const [searchQuery, setSearchQuery] = useState('');
@@ -389,9 +391,8 @@ const App = () => {
         return `Untitled Project #${max + 1}`;
     };
 
-    const handleCreateProject = async (e) => {
-        e.preventDefault();
-        const name = newProjectName.trim() || suggestDefaultName();
+    const handleCreateProject = async () => {
+        const name = suggestDefaultName();
         const proj = {
             id: Date.now().toString(), name,
             originalText: '', wordsToRedact: '',
@@ -401,8 +402,23 @@ const App = () => {
         await saveProject(proj);
         setProjects(prev => [proj, ...prev]);
         openProject(proj);
-        setNewProjectName('');
-        setIsCreateModalOpen(false);
+    };
+
+    const handleSaveTitle = async () => {
+        setIsEditingTitle(false);
+        const newTitle = tempTitle.trim();
+        if (!newTitle || !activeProjectId) return;
+        
+        setIsSaving(true);
+        setProjects(prev => {
+            const proj = prev.find(p => p.id === activeProjectId);
+            if (!proj) { setIsSaving(false); return prev; }
+            const updated = { ...proj, name: newTitle, updatedAt: Date.now() };
+            saveProject(updated)
+                .catch(console.error)
+                .finally(() => setTimeout(() => setIsSaving(false), 300));
+            return prev.map(p => p.id === activeProjectId ? updated : p);
+        });
     };
 
     const openProject = (proj) => {
@@ -1237,7 +1253,8 @@ const App = () => {
                                 Import file
                             </button>
                             <button
-                                onClick={() => setIsCreateModalOpen(true)}
+                                type="button"
+                                onClick={handleCreateProject}
                                 style={{
                                     display: 'inline-flex', alignItems: 'center', gap: '6px',
                                     background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))',
@@ -1345,7 +1362,8 @@ const App = () => {
                                             <Upload size={14} /> Import file
                                         </button>
                                         <button
-                                            onClick={() => setIsCreateModalOpen(true)}
+                                            type="button"
+                                            onClick={handleCreateProject}
                                             style={{
                                                 display: 'inline-flex', alignItems: 'center', gap: '6px',
                                                 background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))',
@@ -1382,56 +1400,6 @@ const App = () => {
                     </p>
                 </main>
 
-                {/* ── Create modal ── */}
-                {isCreateModalOpen && (
-                    <div style={{ position: 'fixed', inset: 0, background: 'hsl(0 0% 0% / 0.45)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
-                        <div style={{ background: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: '12px', width: '100%', maxWidth: '420px', overflow: 'hidden', boxShadow: '0 20px 60px hsl(0 0% 0% / 0.2)' }} className="animate-scale-in">
-                            <div style={{ padding: '24px' }}>
-                                <h3 style={{ fontWeight: 700, fontSize: '1rem', margin: '0 0 6px 0', letterSpacing: '-0.02em' }}>New project</h3>
-                                <p style={{ fontSize: '0.8125rem', color: 'hsl(var(--muted-foreground))', margin: '0 0 20px 0' }}>
-                                    Give your redaction workspace a name.
-                                </p>
-                                <form onSubmit={handleCreateProject} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                    <input
-                                        id="project-name-input"
-                                        type="text"
-                                        autoFocus
-                                        placeholder={suggestDefaultName()}
-                                        value={newProjectName}
-                                        onChange={e => setNewProjectName(e.target.value)}
-                                        style={{
-                                            width: '100%', boxSizing: 'border-box',
-                                            background: 'hsl(var(--muted) / 0.4)', border: '1px solid hsl(var(--border))',
-                                            borderRadius: '8px', padding: '9px 12px', fontSize: '0.875rem',
-                                            color: 'hsl(var(--foreground))', outline: 'none', transition: 'border-color 0.15s'
-                                        }}
-                                        onFocus={e => e.target.style.borderColor = 'hsl(var(--accent))'}
-                                        onBlur={e => e.target.style.borderColor = 'hsl(var(--border))'}
-                                    />
-                                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                        <button
-                                            type="button"
-                                            onClick={() => { setIsCreateModalOpen(false); setNewProjectName(''); }}
-                                            style={{ padding: '8px 14px', border: '1px solid hsl(var(--border))', borderRadius: '6px', background: 'transparent', fontSize: '0.875rem', fontWeight: 500, color: 'hsl(var(--foreground))', cursor: 'pointer', transition: 'background 0.15s' }}
-                                            onMouseEnter={e => e.currentTarget.style.background = 'hsl(var(--muted))'}
-                                            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                                        >
-                                            Cancel
-                                        </button>
-                                        <button
-                                            type="submit"
-                                            style={{ padding: '8px 14px', border: 'none', borderRadius: '6px', background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer', transition: 'opacity 0.15s' }}
-                                            onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
-                                            onMouseLeave={e => e.currentTarget.style.opacity = '1'}
-                                        >
-                                            Create
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                )}
             </div>
         );
     }
@@ -1474,9 +1442,53 @@ const App = () => {
                             <span className="hidden xs:inline">Projects</span>
                         </button>
                         <span style={{ color: 'hsl(var(--muted-foreground) / 0.4)', fontSize: '0.875rem' }}>/</span>
-                        <span style={{ fontWeight: 600, fontSize: '0.9375rem', letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} className="max-w-[70px] xs:max-w-[120px] sm:max-w-[200px]">
-                            {activeProject?.name ?? 'Workspace'}
-                        </span>
+                        {isEditingTitle ? (
+                            <input
+                                type="text"
+                                value={tempTitle}
+                                onChange={e => setTempTitle(e.target.value)}
+                                onBlur={handleSaveTitle}
+                                onKeyDown={e => {
+                                    if (e.key === 'Enter') handleSaveTitle();
+                                    if (e.key === 'Escape') setIsEditingTitle(false);
+                                }}
+                                autoFocus
+                                style={{
+                                    background: 'hsl(var(--muted) / 0.5)',
+                                    border: '1px solid hsl(var(--accent) / 0.5)',
+                                    borderRadius: '6px',
+                                    padding: '2px 8px',
+                                    fontSize: '0.875rem',
+                                    fontWeight: 600,
+                                    color: 'hsl(var(--foreground))',
+                                    outline: 'none',
+                                    width: '140px',
+                                    boxSizing: 'border-box'
+                                }}
+                            />
+                        ) : (
+                            <span
+                                onClick={() => {
+                                    setTempTitle(activeProject?.name ?? '');
+                                    setIsEditingTitle(true);
+                                }}
+                                style={{
+                                    fontWeight: 600,
+                                    fontSize: '0.9375rem',
+                                    letterSpacing: '-0.01em',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                    cursor: 'pointer',
+                                    borderBottom: '1px dashed hsl(var(--muted-foreground) / 0.4)',
+                                    paddingBottom: '2px'
+                                }}
+                                className="max-w-[70px] xs:max-w-[120px] sm:max-w-[200px]"
+                                title="Click to edit project name"
+                            >
+                                {activeProject?.name ?? 'Workspace'}
+                            </span>
+                        )}
                     </div>
 
                     {/* Right: theme toggle + save status */}
