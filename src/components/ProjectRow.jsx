@@ -53,7 +53,7 @@ export default function ProjectRow({ project, onOpen, onDelete }) {
                 />
                 <div style={{ minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                        <span style={{ fontWeight: 500, fontSize: '0.875rem', lineHeight: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'hsl(var(--foreground))' }}>
+                        <span style={{ fontWeight: 500, fontSize: '0.875rem', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'hsl(var(--foreground))', display: 'inline-block', verticalAlign: 'middle' }} className="max-w-[160px] sm:max-w-[320px]">
                             {project.name}
                         </span>
                         <span style={{

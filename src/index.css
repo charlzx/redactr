@@ -157,3 +157,24 @@ body {
 .animate-scale-in { animation: scaleIn 0.2s ease-out both; }
 .animate-slide-up { animation: slideUp 0.3s ease-out both; }
 .animate-pulse-slow { animation: pulseSlow 2s ease-in-out infinite; }
+
+/* Responsive Editor Viewport Heights */
+.editor-panel-viewport-side {
+  height: 300px;
+  min-height: 300px;
+  max-height: 300px;
+}
+@media (min-width: 768px) {
+  .editor-panel-viewport-side {
+    height: 500px;
+    min-height: 500px;
+    max-height: 500px;
+  }
+}
+
+.editor-panel-viewport-stacked {
+  height: auto;
+  min-height: 260px;
+  max-height: none;
+}
+

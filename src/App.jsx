@@ -690,12 +690,10 @@ const App = () => {
                         color: 'hsl(var(--foreground))',
                         whiteSpace: 'pre-wrap',
                         wordBreak: 'break-word',
-                        height: layoutMode === 'side-by-side' ? '500px' : 'auto',
-                        minHeight: layoutMode === 'side-by-side' ? '500px' : '260px',
-                        maxHeight: layoutMode === 'side-by-side' ? '500px' : '400px',
                         overflowY: 'auto',
                         boxSizing: 'border-box'
                     }}
+                    className={layoutMode === 'side-by-side' ? 'editor-panel-viewport-side' : 'editor-panel-viewport-stacked'}
                 >
                     {originalText}
                 </div>
@@ -732,12 +730,10 @@ const App = () => {
                     color: 'hsl(var(--foreground))',
                     whiteSpace: 'pre-wrap',
                     wordBreak: 'break-word',
-                    height: layoutMode === 'side-by-side' ? '500px' : 'auto',
-                    minHeight: layoutMode === 'side-by-side' ? '500px' : '260px',
-                    maxHeight: layoutMode === 'side-by-side' ? '500px' : '400px',
                     overflowY: 'auto',
                     boxSizing: 'border-box'
                 }}
+                className={layoutMode === 'side-by-side' ? 'editor-panel-viewport-side' : 'editor-panel-viewport-stacked'}
                 dangerouslySetInnerHTML={{ __html: safeText }}
             />
         );
@@ -1169,52 +1165,56 @@ const App = () => {
                         </div>
                     </div>
                 )}
-                <main style={{ margin: '0 auto', maxWidth: '720px', padding: '64px 24px', display: 'flex', flexDirection: 'column', minHeight: '100dvh' }} className="animate-in">
+                <main style={{ margin: '0 auto', maxWidth: '720px', padding: '40px 20px', display: 'flex', flexDirection: 'column', minHeight: '100dvh', boxSizing: 'border-box' }} className="animate-in w-full">
 
-                    {/* Top right actions */}
-                    <div style={{ position: 'absolute', top: '24px', right: '24px', display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <button
-                            onClick={() => navigateToView('guide')}
-                            aria-label="User Guide"
-                            style={{
-                                display: 'inline-flex', alignItems: 'center', gap: '6px',
-                                padding: '6px 12px', border: '1px solid hsl(var(--border))',
-                                borderRadius: '6px', background: 'transparent', cursor: 'pointer',
-                                fontSize: '0.8125rem', fontWeight: 600, color: 'hsl(var(--muted-foreground))',
-                                transition: 'background 0.15s, color 0.15s'
-                            }}
-                            onMouseEnter={e => {
-                                e.currentTarget.style.background = 'hsl(var(--muted) / 0.5)';
-                                e.currentTarget.style.color = 'hsl(var(--foreground))';
-                            }}
-                            onMouseLeave={e => {
-                                e.currentTarget.style.background = 'transparent';
-                                e.currentTarget.style.color = 'hsl(var(--muted-foreground))';
-                            }}
-                            title="Documentation"
-                        >
-                            <HelpCircle size={15} style={{ color: 'hsl(var(--accent))' }} />
-                            <span>User Guide</span>
-                        </button>
-                        <button
-                            id="theme-toggle"
-                            onClick={toggleTheme}
-                            aria-label="Toggle theme"
-                            style={{ position: 'relative', padding: '8px', borderRadius: '8px', border: 'none', background: 'transparent', cursor: 'pointer', color: 'hsl(var(--muted-foreground))', transition: 'background 0.15s, color 0.15s', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                            onMouseEnter={e => e.currentTarget.style.background = 'hsl(var(--muted) / 0.5)'}
-                            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                        >
-                            {isDark
-                                ? <Sun size={16} style={{ transition: 'transform 0.2s' }} />
-                                : <Moon size={16} style={{ transition: 'transform 0.2s' }} />
-                            }
-                        </button>
+                    {/* ── Header Row ── */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', gap: '16px', flexWrap: 'wrap' }}>
+                        <h1 style={{ fontSize: '1.875rem', fontWeight: 800, letterSpacing: '-0.03em', margin: 0 }}>Redacta</h1>
+                        
+                        {/* Header Actions */}
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <button
+                                onClick={() => navigateToView('guide')}
+                                aria-label="User Guide"
+                                style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                    padding: '6px 12px', border: '1px solid hsl(var(--border))',
+                                    borderRadius: '6px', background: 'transparent', cursor: 'pointer',
+                                    fontSize: '0.8125rem', fontWeight: 600, color: 'hsl(var(--muted-foreground))',
+                                    transition: 'background 0.15s, color 0.15s'
+                                }}
+                                onMouseEnter={e => {
+                                    e.currentTarget.style.background = 'hsl(var(--muted) / 0.5)';
+                                    e.currentTarget.style.color = 'hsl(var(--foreground))';
+                                }}
+                                onMouseLeave={e => {
+                                    e.currentTarget.style.background = 'transparent';
+                                    e.currentTarget.style.color = 'hsl(var(--muted-foreground))';
+                                }}
+                                title="Documentation"
+                            >
+                                <HelpCircle size={15} style={{ color: 'hsl(var(--accent))' }} />
+                                <span>User Guide</span>
+                            </button>
+                            <button
+                                id="theme-toggle"
+                                onClick={toggleTheme}
+                                aria-label="Toggle theme"
+                                style={{ position: 'relative', padding: '8px', borderRadius: '8px', border: 'none', background: 'transparent', cursor: 'pointer', color: 'hsl(var(--muted-foreground))', transition: 'background 0.15s, color 0.15s', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                onMouseEnter={e => e.currentTarget.style.background = 'hsl(var(--muted) / 0.5)'}
+                                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                            >
+                                {isDark
+                                    ? <Sun size={16} style={{ transition: 'transform 0.2s' }} />
+                                    : <Moon size={16} style={{ transition: 'transform 0.2s' }} />
+                                }
+                            </button>
+                        </div>
                     </div>
 
-                    {/* ── Title block ── */}
-                    <div style={{ marginBottom: '40px' }}>
-                        <h1 style={{ fontSize: '1.875rem', fontWeight: 800, letterSpacing: '-0.03em', margin: 0 }}>Redacta</h1>
-                        <p style={{ marginTop: '8px', fontSize: '0.9375rem', color: 'hsl(var(--muted-foreground))' }}>
+                    {/* Subtitle Block */}
+                    <div style={{ marginBottom: '32px' }}>
+                        <p style={{ marginTop: 0, fontSize: '0.9375rem', color: 'hsl(var(--muted-foreground))', margin: 0 }}>
                             Client-side text redaction — nothing leaves your browser.
                         </p>
                         <div style={{ marginTop: '20px', display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
@@ -1538,11 +1538,10 @@ const App = () => {
                 </div>
             </header>
 
-            {/* ── Main workspace ── */}
-            <main style={{ maxWidth: '1360px', margin: '0 auto', padding: '24px 16px', display: 'grid', gridTemplateColumns: '300px 1fr', gap: '20px', alignItems: 'start' }} className="animate-in">
+            <main style={{ maxWidth: '1360px', margin: '0 auto', padding: '24px 16px', gap: '20px' }} className="animate-in grid grid-cols-1 lg:grid-cols-[300px_1fr] items-start w-full box-border">
 
                 {/* ── Left: Controls ── */}
-                <aside>
+                <aside className="lg:sticky lg:top-[80px] z-10 w-full lg:max-h-[calc(100vh-100px)] lg:overflow-y-auto overflow-x-hidden scrollbar-thin">
                     <div style={{ border: '1px solid hsl(var(--border))', borderRadius: '10px', background: 'hsl(var(--card))', overflow: 'hidden' }}>
                         
                         {/* Header */}
@@ -1887,12 +1886,10 @@ const App = () => {
                 </aside>
 
                 {/* ── Right: Text panels ── */}
-                <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: layoutMode === 'side-by-side' ? '1fr 1fr' : '1fr',
-                    gap: '20px',
-                    alignItems: 'start'
-                }}>
+                <div
+                    style={{ gap: '20px' }}
+                    className={`grid grid-cols-1 ${layoutMode === 'side-by-side' ? 'md:grid-cols-2' : 'md:grid-cols-1'} items-start w-full`}
+                >
 
                     {/* Original text */}
                     <div
@@ -1903,7 +1900,7 @@ const App = () => {
                         }}
                     >
                         {/* Panel header */}
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: '1px solid hsl(var(--border))' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: '1px solid hsl(var(--border))', flexWrap: 'wrap', gap: '8px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>Original text</span>
                                 {importedFileName && (
@@ -1952,15 +1949,13 @@ const App = () => {
                                     placeholder="Type or paste your content here..."
                                     style={{
                                         width: '100%', boxSizing: 'border-box',
-                                        height: layoutMode === 'side-by-side' ? '500px' : 'auto',
-                                        minHeight: layoutMode === 'side-by-side' ? '500px' : '260px',
-                                        maxHeight: layoutMode === 'side-by-side' ? '500px' : 'none',
                                         background: 'transparent', border: 'none', outline: 'none',
                                         padding: '16px', resize: layoutMode === 'side-by-side' ? 'none' : 'vertical', fontSize: '0.875rem',
                                         lineHeight: 1.65, color: 'hsl(var(--foreground))',
                                         fontFamily: 'inherit', borderRadius: '0 0 10px 10px',
                                         position: 'relative', zIndex: 1, overflowY: 'auto'
                                     }}
+                                    className={layoutMode === 'side-by-side' ? 'editor-panel-viewport-side' : 'editor-panel-viewport-stacked'}
                                 />
 
                         {selectedText && (
@@ -2195,17 +2190,15 @@ const App = () => {
                                 </div>
                             </div>
                         </div>
-                        <div
+                         <div
                             ref={redactedTextScrollRef}
                             id="redacted-output-content"
                             style={{
-                                height: layoutMode === 'side-by-side' ? '500px' : 'auto',
-                                minHeight: layoutMode === 'side-by-side' ? '500px' : '260px',
-                                maxHeight: layoutMode === 'side-by-side' ? '500px' : 'none',
                                 padding: '16px', fontSize: '0.875rem', lineHeight: 1.65,
                                 whiteSpace: 'pre-wrap', wordBreak: 'break-word', overflowY: 'auto',
                                 color: 'hsl(var(--foreground))', boxSizing: 'border-box'
                             }}
+                            className={layoutMode === 'side-by-side' ? 'editor-panel-viewport-side' : 'editor-panel-viewport-stacked'}
                             dangerouslySetInnerHTML={{ __html: htmlRedactedText }}
                         />
                     </div>
