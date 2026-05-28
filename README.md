@@ -25,7 +25,7 @@ All operations and text extractions run **100% locally in your browser** — zer
 ## Tech Stack
 
 - **Framework:** React 19 + Vite 7
-- **Styling:** CSS variables (Vercel HSL design tokens)
+- **Styling:** CSS variables (Modern HSL design tokens)
 - **Icons:** Lucide React
 - **Storage:** Native IndexedDB
 - **Parsers & Engines:** Mammoth.js (DOCX extraction), PDF.js (PDF extraction), jsPDF (PDF export)
