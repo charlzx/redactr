@@ -292,77 +292,78 @@ const App = () => {
             .trim();
     };
 
+    /** Extract plain text from any supported file format */
+    const extractTextFromFile = (file) => {
+        return new Promise((resolve, reject) => {
+            const name = file.name.toLowerCase();
+            const reader = new FileReader();
+
+            if (name.endsWith('.docx')) {
+                reader.onload = e => {
+                    const buf = e.target.result;
+                    if (!window.mammoth) {
+                        reject('DOCX library not loaded. Please retry.');
+                        return;
+                    }
+                    window.mammoth.extractRawText({ arrayBuffer: buf })
+                        .then(r => resolve(r.value))
+                        .catch(() => reject('Could not read the .docx file.'));
+                };
+                reader.onerror = () => reject('Could not read the .docx file.');
+                reader.readAsArrayBuffer(file);
+            } else if (name.endsWith('.pdf')) {
+                reader.onload = async e => {
+                    const buf = e.target.result;
+                    if (!window.pdfjsLib) {
+                        reject('PDF library not loaded. Please retry.');
+                        return;
+                    }
+                    window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+                    try {
+                        const pdf = await window.pdfjsLib.getDocument({ data: buf }).promise;
+                        let text = '';
+                        for (let i = 1; i <= pdf.numPages; i++) {
+                            const page = await pdf.getPage(i);
+                            const content = await page.getTextContent();
+                            text += content.items.map(it => it.str).join(' ') + '\n';
+                        }
+                        resolve(text);
+                    } catch (err) {
+                        reject('Could not read the .pdf file.');
+                    }
+                };
+                reader.onerror = () => reject('Could not read the .pdf file.');
+                reader.readAsArrayBuffer(file);
+            } else {
+                // .txt, .csv, .md and any other plain text
+                reader.onload = e => {
+                    const raw = e.target.result;
+                    const text = name.endsWith('.md') ? markdownToPlainText(raw) : raw;
+                    resolve(text);
+                };
+                reader.onerror = () => reject('Could not read the file.');
+                reader.readAsText(file);
+            }
+        });
+    };
+
     /** Unified file dispatcher — routes by extension */
     const processFile = (file) => {
         if (!file) return;
-        const name = file.name.toLowerCase();
         setIsProcessingFile(true);
         setProcessingError('');
         setOriginalText('');
         setImportedFileName(file.name);
-        const reader = new FileReader();
-        if (name.endsWith('.docx')) {
-            reader.onload = e => processDocx(e.target.result);
-            reader.readAsArrayBuffer(file);
-        } else if (name.endsWith('.pdf')) {
-            reader.onload = e => processPdf(e.target.result);
-            reader.readAsArrayBuffer(file);
-        } else {
-            // .txt, .csv, .md and any other plain text
-            reader.onload = e => {
-                const raw = e.target.result;
-                const text = name.endsWith('.md') ? markdownToPlainText(raw) : raw;
+        extractTextFromFile(file)
+            .then(text => {
                 setOriginalText(text);
+            })
+            .catch(err => {
+                setProcessingError(err);
+            })
+            .finally(() => {
                 setIsProcessingFile(false);
-            };
-            reader.onerror = () => { setProcessingError('Could not read the file.'); setIsProcessingFile(false); };
-            reader.readAsText(file);
-        }
-    };
-
-    const handleFileUpload = (event) => {
-        processFile(event.target.files[0]);
-        event.target.value = null;
-    };
-
-    const handleDragOver = (e) => { e.preventDefault(); e.stopPropagation(); };
-    const handleDragEnter = (e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); };
-    const handleDragLeave = (e) => {
-        // only clear when leaving the container itself, not a child
-        if (!e.currentTarget.contains(e.relatedTarget)) setIsDragging(false);
-    };
-    const handleDrop = (e) => {
-        e.preventDefault(); e.stopPropagation();
-        setIsDragging(false);
-        const file = e.dataTransfer.files[0];
-        if (!file) return;
-        const allowed = ['.txt', '.csv', '.md', '.docx', '.pdf'];
-        const ok = allowed.some(ext => file.name.toLowerCase().endsWith(ext));
-        if (!ok) { setProcessingError(`Unsupported format. Accepted: ${allowed.join(', ')}`); return; }
-        processFile(file);
-    };
-
-    const processDocx = (buf) => {
-        if (!window.mammoth) { setProcessingError('DOCX library not loaded. Please retry.'); setIsProcessingFile(false); return; }
-        window.mammoth.extractRawText({ arrayBuffer: buf })
-            .then(r => { setOriginalText(r.value); setIsProcessingFile(false); })
-            .catch(() => { setProcessingError('Could not read the .docx file.'); setIsProcessingFile(false); });
-    };
-
-    const processPdf = async (buf) => {
-        if (!window.pdfjsLib) { setProcessingError('PDF library not loaded. Please retry.'); setIsProcessingFile(false); return; }
-        window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-        try {
-            const pdf = await window.pdfjsLib.getDocument({ data: buf }).promise;
-            let text = '';
-            for (let i = 1; i <= pdf.numPages; i++) {
-                const page = await pdf.getPage(i);
-                const content = await page.getTextContent();
-                text += content.items.map(it => it.str).join(' ') + '\n';
-            }
-            setOriginalText(text);
-        } catch { setProcessingError('Could not read the .pdf file.'); }
-        finally { setIsProcessingFile(false); }
+            });
     };
 
     const handleDownloadTxt = () => {
