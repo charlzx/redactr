@@ -138,6 +138,9 @@ const App = () => {
     const [importedFileName, setImportedFileName] = useState('');
     const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [rulePattern, setRulePattern] = useState('');
+    const [ruleReplacement, setRuleReplacement] = useState('');
+    const [isEditingRawRules, setIsEditingRawRules] = useState(false);
 
     // ── Dashboard UI state ────────────────────────────────────────────────────
     const [searchQuery, setSearchQuery] = useState('');
@@ -310,6 +313,53 @@ const App = () => {
             setIsDashboardProcessingFile(false);
             setDashboardImportedFileName('');
         }
+    };
+
+    const activeRules = React.useMemo(() => {
+        return wordsToRedact.split(',').map(s => {
+            const parts = s.split(':');
+            return { pattern: (parts[0] || '').trim(), replacement: parts.slice(1).join(':').trim() || '***' };
+        }).filter(r => r.pattern.length > 0);
+    }, [wordsToRedact]);
+
+    const handleAddRule = (e) => {
+        if (e) e.preventDefault();
+        const pat = rulePattern.trim();
+        if (!pat) return;
+
+        const rep = ruleReplacement.trim() || '***';
+        const newRuleStr = rep === '***' ? pat : `${pat}:${rep}`;
+
+        let newWordsStr = wordsToRedact.trim();
+        if (newWordsStr) {
+            const rulesArr = newWordsStr.split(',').map(s => s.trim());
+            const index = rulesArr.findIndex(r => {
+                const p = r.split(':')[0].trim();
+                return p.toLowerCase() === pat.toLowerCase();
+            });
+
+            if (index !== -1) {
+                rulesArr[index] = newRuleStr;
+            } else {
+                rulesArr.push(newRuleStr);
+            }
+            newWordsStr = rulesArr.join(', ');
+        } else {
+            newWordsStr = newRuleStr;
+        }
+
+        setWordsToRedact(newWordsStr);
+        setRulePattern('');
+        setRuleReplacement('');
+    };
+
+    const handleDeleteRule = (patternToDelete) => {
+        const rulesArr = wordsToRedact.split(',').map(s => s.trim());
+        const filteredRules = rulesArr.filter(r => {
+            const p = r.split(':')[0].trim();
+            return p.toLowerCase() !== patternToDelete.toLowerCase();
+        });
+        setWordsToRedact(filteredRules.join(', '));
     };
 
     // ── File handlers ─────────────────────────────────────────────────────────
@@ -746,63 +796,195 @@ const App = () => {
 
                 {/* ── Left: Controls ── */}
                 <aside>
-                    <div style={{ border: '1px solid hsl(var(--border))', borderRadius: '10px', background: 'hsl(var(--card))', padding: '20px', marginBottom: '16px' }}>
-                        <h2 style={{ fontWeight: 700, fontSize: '0.875rem', letterSpacing: '-0.01em', margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '6px', color: 'hsl(var(--foreground))' }}>
-                            <Settings size={14} style={{ color: 'hsl(var(--muted-foreground))' }} />
-                            Controls
-                        </h2>
-
-                        <div style={{ marginBottom: '16px' }}>
-                            <label htmlFor="wordsToRedact" style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
-                                Words &amp; Replacements
-                            </label>
-                            <textarea
-                                id="wordsToRedact"
-                                value={wordsToRedact}
-                                onChange={e => setWordsToRedact(e.target.value)}
-                                placeholder="word:replacement, another:***"
-                                style={{
-                                    width: '100%', boxSizing: 'border-box', height: '96px',
-                                    background: 'hsl(var(--muted) / 0.5)', border: '1px solid hsl(var(--border))',
-                                    borderRadius: '8px', padding: '9px 12px', resize: 'none',
-                                    fontSize: '0.8125rem', color: 'hsl(var(--foreground))',
-                                    fontFamily: 'ui-monospace, monospace', outline: 'none', transition: 'border-color 0.15s'
-                                }}
-                                onFocus={e => e.target.style.borderColor = 'hsl(var(--accent))'}
-                                onBlur={e => e.target.style.borderColor = 'hsl(var(--border))'}
-                            />
-                            <p style={{ fontSize: '0.6875rem', color: 'hsl(var(--muted-foreground))', marginTop: '6px', lineHeight: 1.5 }}>
-                                Format: <code style={{ fontFamily: 'ui-monospace, monospace' }}>pattern:replacement</code>. Defaults to <code>***</code>.
-                            </p>
-                        </div>
-
-                        <div style={{ borderTop: '1px solid hsl(var(--border))', paddingTop: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                            {[
-                                { id: 'case-sensitive', label: 'Case sensitive', icon: <CaseSensitive size={13} />, checked: isCaseSensitive, onChange: () => setIsCaseSensitive(v => !v) },
-                                { id: 'whole-word', label: 'Whole word only', icon: <WholeWord size={13} />, checked: isWholeWord, onChange: () => setIsWholeWord(v => !v) },
-                            ].map(({ id, label, icon, checked, onChange }) => (
-                                <label key={id} htmlFor={id} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', userSelect: 'none', fontSize: '0.8125rem', fontWeight: 500, color: 'hsl(var(--foreground))' }}>
-                                    <input type="checkbox" id={id} checked={checked} onChange={onChange} style={{ width: '14px', height: '14px', cursor: 'pointer', accentColor: 'hsl(var(--accent))' }} />
-                                    <span style={{ color: 'hsl(var(--muted-foreground))' }}>{icon}</span>
-                                    {label}
-                                </label>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Stats */}
                     <div style={{ border: '1px solid hsl(var(--border))', borderRadius: '10px', background: 'hsl(var(--card))', overflow: 'hidden' }}>
-                        {[
-                            { label: 'Words scanned', value: scannedWords, icon: <FileText size={13} /> },
-                            { label: 'Matches found', value: matchesFound, icon: <Type size={13} /> },
-                        ].map(({ label, value, icon }, i) => (
-                            <div key={label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: i === 0 ? '1px solid hsl(var(--border))' : 'none' }}>
-                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.8125rem', color: 'hsl(var(--muted-foreground))' }}>
-                                    {icon}{label}
-                                </span>
-                                <span style={{ fontFamily: 'ui-monospace, monospace', fontWeight: 700, fontSize: '0.9375rem', color: 'hsl(var(--foreground))' }}>{value}</span>
+                        
+                        {/* Header */}
+                        <div style={{ padding: '16px 20px', borderBottom: '1px solid hsl(var(--border))', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <h2 style={{ fontWeight: 700, fontSize: '0.875rem', letterSpacing: '-0.01em', margin: 0, display: 'flex', alignItems: 'center', gap: '6px', color: 'hsl(var(--foreground))' }}>
+                                <Shield size={14} style={{ color: 'hsl(var(--accent))' }} />
+                                Redaction Rules
+                            </h2>
+                            <button
+                                onClick={() => setIsEditingRawRules(!isEditingRawRules)}
+                                style={{ background: 'transparent', border: 'none', color: 'hsl(var(--muted-foreground))', fontSize: '0.725rem', fontWeight: 600, cursor: 'pointer', transition: 'color 0.15s', textTransform: 'uppercase', letterSpacing: '0.03em' }}
+                                onMouseEnter={e => e.currentTarget.style.color = 'hsl(var(--foreground))'}
+                                onMouseLeave={e => e.currentTarget.style.color = 'hsl(var(--muted-foreground))'}
+                            >
+                                {isEditingRawRules ? 'Visual Mode' : 'Raw Text'}
+                            </button>
+                        </div>
+
+                        {/* Rules Body */}
+                        {isEditingRawRules ? (
+                            <div style={{ padding: '20px' }}>
+                                <label htmlFor="wordsToRedact" style={{ display: 'block', fontSize: '0.725rem', fontWeight: 600, color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
+                                    Raw Rules List
+                                </label>
+                                <textarea
+                                    id="wordsToRedact"
+                                    value={wordsToRedact}
+                                    onChange={e => setWordsToRedact(e.target.value)}
+                                    placeholder="word:replacement, another:***"
+                                    style={{
+                                        width: '100%', boxSizing: 'border-box', height: '150px',
+                                        background: 'hsl(var(--muted) / 0.5)', border: '1px solid hsl(var(--border))',
+                                        borderRadius: '8px', padding: '9px 12px', resize: 'none',
+                                        fontSize: '0.8125rem', color: 'hsl(var(--foreground))',
+                                        fontFamily: 'ui-monospace, monospace', outline: 'none', transition: 'border-color 0.15s'
+                                    }}
+                                    onFocus={e => e.target.style.borderColor = 'hsl(var(--accent))'}
+                                    onBlur={e => e.target.style.borderColor = 'hsl(var(--border))'}
+                                />
+                                <p style={{ fontSize: '0.6875rem', color: 'hsl(var(--muted-foreground))', marginTop: '6px', lineHeight: 1.5, margin: 0 }}>
+                                    Format: <code style={{ fontFamily: 'ui-monospace, monospace' }}>pattern:replacement</code>. Separate with commas.
+                                </p>
                             </div>
-                        ))}
+                        ) : (
+                            <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                {/* Form to add rule */}
+                                <form onSubmit={handleAddRule} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '0.725rem', fontWeight: 600, color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
+                                            Add Rule
+                                        </label>
+                                        <input
+                                            type="text"
+                                            placeholder="Word or phrase to redact..."
+                                            value={rulePattern}
+                                            onChange={e => setRulePattern(e.target.value)}
+                                            style={{
+                                                width: '100%', boxSizing: 'border-box',
+                                                background: 'hsl(var(--muted) / 0.5)', border: '1px solid hsl(var(--border))',
+                                                borderRadius: '6px', padding: '8px 10px', fontSize: '0.8125rem',
+                                                color: 'hsl(var(--foreground))', outline: 'none', transition: 'border-color 0.15s'
+                                            }}
+                                            onFocus={e => e.target.style.borderColor = 'hsl(var(--accent))'}
+                                            onBlur={e => e.target.style.borderColor = 'hsl(var(--border))'}
+                                        />
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                        <input
+                                            type="text"
+                                            placeholder="Replacement (e.g. [SECRET], default ***)"
+                                            value={ruleReplacement}
+                                            onChange={e => setRuleReplacement(e.target.value)}
+                                            style={{
+                                                flex: 1, boxSizing: 'border-box', minWidth: 0,
+                                                background: 'hsl(var(--muted) / 0.5)', border: '1px solid hsl(var(--border))',
+                                                borderRadius: '6px', padding: '8px 10px', fontSize: '0.8125rem',
+                                                color: 'hsl(var(--foreground))', outline: 'none', transition: 'border-color 0.15s'
+                                            }}
+                                            onFocus={e => e.target.style.borderColor = 'hsl(var(--accent))'}
+                                            onBlur={e => e.target.style.borderColor = 'hsl(var(--border))'}
+                                        />
+                                        <button
+                                            type="submit"
+                                            style={{
+                                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                width: '34px', height: '34px', borderRadius: '6px',
+                                                background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))',
+                                                border: 'none', cursor: 'pointer', transition: 'opacity 0.15s', flexShrink: 0
+                                            }}
+                                            onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
+                                            onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+                                        >
+                                            <Plus size={15} />
+                                        </button>
+                                    </div>
+                                </form>
+
+                                {/* Active Rules Visual tags */}
+                                <div style={{ borderTop: '1px solid hsl(var(--border))', paddingTop: '14px' }}>
+                                    <label style={{ display: 'block', fontSize: '0.725rem', fontWeight: 600, color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
+                                        Active Rules ({activeRules.length})
+                                    </label>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '160px', overflowY: 'auto', paddingRight: '4px' }}>
+                                        {activeRules.length === 0 ? (
+                                            <span style={{ fontSize: '0.75rem', color: 'hsl(var(--muted-foreground))', fontStyle: 'italic' }}>
+                                                No rules yet. Add one above!
+                                            </span>
+                                        ) : (
+                                            activeRules.map((rule, idx) => (
+                                                <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'hsl(var(--muted) / 0.3)', border: '1px solid hsl(var(--border))', borderRadius: '6px', padding: '6px 10px', gap: '8px' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+                                                        <span style={{ fontSize: '0.8125rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'hsl(var(--foreground))' }} title={rule.pattern}>
+                                                            {rule.pattern}
+                                                        </span>
+                                                        <span style={{ color: 'hsl(var(--muted-foreground) / 0.4)', fontSize: '0.75rem' }}>→</span>
+                                                        <span style={{ fontSize: '0.75rem', color: 'hsl(var(--accent))', fontFamily: 'ui-monospace, monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={rule.replacement}>
+                                                            {rule.replacement}
+                                                        </span>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => handleDeleteRule(rule.pattern)}
+                                                        style={{ background: 'none', border: 'none', color: 'hsl(var(--muted-foreground))', fontSize: '1rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '2px', transition: 'color 0.15s' }}
+                                                        onMouseEnter={e => e.currentTarget.style.color = 'hsl(var(--destructive))'}
+                                                        onMouseLeave={e => e.currentTarget.style.color = 'hsl(var(--muted-foreground))'}
+                                                    >
+                                                        &times;
+                                                    </button>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Settings Button Toggles */}
+                        <div style={{ padding: '0 20px 20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                                <button
+                                    onClick={() => setIsCaseSensitive(v => !v)}
+                                    style={{
+                                        flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                                        padding: '8px 10px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 600,
+                                        cursor: 'pointer', border: '1px solid', transition: 'all 0.15s',
+                                        background: isCaseSensitive ? 'hsl(var(--accent) / 0.08)' : 'transparent',
+                                        borderColor: isCaseSensitive ? 'hsl(var(--accent) / 0.3)' : 'hsl(var(--border))',
+                                        color: isCaseSensitive ? 'hsl(var(--accent))' : 'hsl(var(--muted-foreground))'
+                                    }}
+                                >
+                                    <CaseSensitive size={13} />
+                                    Aa
+                                </button>
+                                <button
+                                    onClick={() => setIsWholeWord(v => !v)}
+                                    style={{
+                                        flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                                        padding: '8px 10px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 600,
+                                        cursor: 'pointer', border: '1px solid', transition: 'all 0.15s',
+                                        background: isWholeWord ? 'hsl(var(--accent) / 0.08)' : 'transparent',
+                                        borderColor: isWholeWord ? 'hsl(var(--accent) / 0.3)' : 'hsl(var(--border))',
+                                        color: isWholeWord ? 'hsl(var(--accent))' : 'hsl(var(--muted-foreground))'
+                                    }}
+                                >
+                                    <WholeWord size={13} />
+                                    [W]
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Stats Badges */}
+                        <div style={{ background: 'hsl(var(--muted) / 0.2)', borderTop: '1px solid hsl(var(--border))', display: 'flex' }}>
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '10px 8px', borderRight: '1px solid hsl(var(--border))' }}>
+                                <span style={{ fontSize: '0.625rem', color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2px' }}>
+                                    Words Scanned
+                                </span>
+                                <span style={{ fontSize: '0.875rem', fontWeight: 700, color: 'hsl(var(--foreground))', fontFamily: 'ui-monospace, monospace' }}>
+                                    {scannedWords}
+                                </span>
+                            </div>
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '10px 8px' }}>
+                                <span style={{ fontSize: '0.625rem', color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2px' }}>
+                                    Redacted
+                                </span>
+                                <span style={{ fontSize: '0.875rem', fontWeight: 700, color: 'hsl(var(--foreground))', fontFamily: 'ui-monospace, monospace' }}>
+                                    {matchesFound}
+                                </span>
+                            </div>
+                        </div>
+
                     </div>
                 </aside>
 
