@@ -141,6 +141,9 @@ const App = () => {
     const [rulePattern, setRulePattern] = useState('');
     const [ruleReplacement, setRuleReplacement] = useState('');
     const [isEditingRawRules, setIsEditingRawRules] = useState(false);
+    const [isConfigRulesOpen, setIsConfigRulesOpen] = useState(true);
+    const [isActiveRulesOpen, setIsActiveRulesOpen] = useState(true);
+    const [isOptionsOpen, setIsOptionsOpen] = useState(true);
 
     // ── Dashboard UI state ────────────────────────────────────────────────────
     const [searchQuery, setSearchQuery] = useState('');
@@ -496,6 +499,31 @@ const App = () => {
 
     const activeProject = projects.find(p => p.id === activeProjectId);
 
+    const renderAccordionSection = (title, isOpen, onToggle, children) => (
+        <div style={{ borderBottom: '1px solid hsl(var(--border))' }}>
+            <button
+                onClick={onToggle}
+                style={{
+                    width: '100%', boxSizing: 'border-box', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '12px 20px', background: 'transparent', border: 'none', cursor: 'pointer',
+                    textAlign: 'left', outline: 'none'
+                }}
+            >
+                <span style={{ fontSize: '0.725rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'hsl(var(--muted-foreground))' }}>
+                    {title}
+                </span>
+                <span style={{ fontSize: '0.625rem', color: 'hsl(var(--muted-foreground) / 0.7)', transition: 'transform 0.15s', transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>
+                    ▶
+                </span>
+            </button>
+            {isOpen && (
+                <div style={{ padding: '0 20px 16px' }}>
+                    {children}
+                </div>
+            )}
+        </div>
+    );
+
     // ─────────────────────────────────────────────────────────────────────────
     // ── DASHBOARD VIEW ────────────────────────────────────────────────────────
     // ─────────────────────────────────────────────────────────────────────────
@@ -840,128 +868,128 @@ const App = () => {
                                 </p>
                             </div>
                         ) : (
-                            <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                {/* Form to add rule */}
-                                <form onSubmit={handleAddRule} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                    <label style={{ display: 'block', fontSize: '0.725rem', fontWeight: 600, color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2px' }}>
-                                        Add Rule
-                                    </label>
-                                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                        <input
-                                            type="text"
-                                            placeholder="Redact..."
-                                            value={rulePattern}
-                                            onChange={e => setRulePattern(e.target.value)}
-                                            style={{
-                                                flex: 1, minWidth: 0, boxSizing: 'border-box',
-                                                background: 'hsl(var(--muted) / 0.5)', border: '1px solid hsl(var(--border))',
-                                                borderRadius: '6px', padding: '8px 10px', fontSize: '0.8125rem',
-                                                color: 'hsl(var(--foreground))', outline: 'none', transition: 'border-color 0.15s'
-                                            }}
-                                            onFocus={e => e.target.style.borderColor = 'hsl(var(--accent))'}
-                                            onBlur={e => e.target.style.borderColor = 'hsl(var(--border))'}
-                                        />
-                                        <input
-                                            type="text"
-                                            placeholder="With..."
-                                            value={ruleReplacement}
-                                            onChange={e => setRuleReplacement(e.target.value)}
-                                            style={{
-                                                flex: 1, minWidth: 0, boxSizing: 'border-box',
-                                                background: 'hsl(var(--muted) / 0.5)', border: '1px solid hsl(var(--border))',
-                                                borderRadius: '6px', padding: '8px 10px', fontSize: '0.8125rem',
-                                                color: 'hsl(var(--foreground))', outline: 'none', transition: 'border-color 0.15s'
-                                            }}
-                                            onFocus={e => e.target.style.borderColor = 'hsl(var(--accent))'}
-                                            onBlur={e => e.target.style.borderColor = 'hsl(var(--border))'}
-                                        />
-                                        <button
-                                            type="submit"
-                                            style={{
-                                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                                                width: '34px', height: '34px', borderRadius: '6px',
-                                                background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))',
-                                                border: 'none', cursor: 'pointer', transition: 'opacity 0.15s', flexShrink: 0
-                                            }}
-                                            onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
-                                            onMouseLeave={e => e.currentTarget.style.opacity = '1'}
-                                        >
-                                            <Plus size={15} />
-                                        </button>
-                                    </div>
-                                </form>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                
+                                {/* Accordion 1: Configure Rules */}
+                                {renderAccordionSection("Configure Rules", isConfigRulesOpen, () => setIsConfigRulesOpen(!isConfigRulesOpen), (
+                                    <form onSubmit={handleAddRule} style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingTop: '4px' }}>
+                                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                            <input
+                                                type="text"
+                                                placeholder="Redact..."
+                                                value={rulePattern}
+                                                onChange={e => setRulePattern(e.target.value)}
+                                                style={{
+                                                    flex: 1, minWidth: 0, boxSizing: 'border-box',
+                                                    background: 'hsl(var(--muted) / 0.5)', border: '1px solid hsl(var(--border))',
+                                                    borderRadius: '6px', padding: '8px 10px', fontSize: '0.8125rem',
+                                                    color: 'hsl(var(--foreground))', outline: 'none', transition: 'border-color 0.15s'
+                                                }}
+                                                onFocus={e => e.target.style.borderColor = 'hsl(var(--accent))'}
+                                                onBlur={e => e.target.style.borderColor = 'hsl(var(--border))'}
+                                            />
+                                            <input
+                                                type="text"
+                                                placeholder="With..."
+                                                value={ruleReplacement}
+                                                onChange={e => setRuleReplacement(e.target.value)}
+                                                style={{
+                                                    flex: 1, minWidth: 0, boxSizing: 'border-box',
+                                                    background: 'hsl(var(--muted) / 0.5)', border: '1px solid hsl(var(--border))',
+                                                    borderRadius: '6px', padding: '8px 10px', fontSize: '0.8125rem',
+                                                    color: 'hsl(var(--foreground))', outline: 'none', transition: 'border-color 0.15s'
+                                                }}
+                                                onFocus={e => e.target.style.borderColor = 'hsl(var(--accent))'}
+                                                onBlur={e => e.target.style.borderColor = 'hsl(var(--border))'}
+                                            />
+                                            <button
+                                                type="submit"
+                                                style={{
+                                                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                    width: '34px', height: '34px', borderRadius: '6px',
+                                                    background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))',
+                                                    border: 'none', cursor: 'pointer', transition: 'opacity 0.15s', flexShrink: 0
+                                                }}
+                                                onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
+                                                onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+                                            >
+                                                <Plus size={15} />
+                                            </button>
+                                        </div>
+                                    </form>
+                                ))}
 
-                                {/* Active Rules Visual tags */}
-                                <div style={{ borderTop: '1px solid hsl(var(--border))', paddingTop: '14px' }}>
-                                    <label style={{ display: 'block', fontSize: '0.725rem', fontWeight: 600, color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
-                                        Active Rules ({activeRules.length})
-                                    </label>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '160px', overflowY: 'auto', paddingRight: '4px' }}>
+                                {/* Accordion 2: Active Rules (Visual Tag Cloud) */}
+                                {renderAccordionSection(`Active Rules (${activeRules.length})`, isActiveRulesOpen, () => setIsActiveRulesOpen(!isActiveRulesOpen), (
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', maxHeight: '150px', overflowY: 'auto', paddingRight: '2px', paddingTop: '4px' }}>
                                         {activeRules.length === 0 ? (
                                             <span style={{ fontSize: '0.75rem', color: 'hsl(var(--muted-foreground))', fontStyle: 'italic' }}>
-                                                No rules yet. Add one above!
+                                                No active rules. Add one above!
                                             </span>
                                         ) : (
                                             activeRules.map((rule, idx) => (
-                                                <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'hsl(var(--muted) / 0.3)', border: '1px solid hsl(var(--border))', borderRadius: '6px', padding: '6px 10px', gap: '8px' }}>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
-                                                        <span style={{ fontSize: '0.8125rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'hsl(var(--foreground))' }} title={rule.pattern}>
-                                                            {rule.pattern}
-                                                        </span>
-                                                        <span style={{ color: 'hsl(var(--muted-foreground) / 0.4)', fontSize: '0.75rem' }}>→</span>
-                                                        <span style={{ fontSize: '0.75rem', color: 'hsl(var(--accent))', fontFamily: 'ui-monospace, monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={rule.replacement}>
-                                                            {rule.replacement}
-                                                        </span>
-                                                    </div>
+                                                <span
+                                                    key={idx}
+                                                    style={{
+                                                        display: 'inline-flex', alignItems: 'center', gap: '5px',
+                                                        padding: '3px 8px', borderRadius: '9999px', fontSize: '0.75rem',
+                                                        background: 'hsl(var(--muted) / 0.5)', border: '1px solid hsl(var(--border))',
+                                                        color: 'hsl(var(--foreground))', transition: 'all 0.15s'
+                                                    }}
+                                                >
+                                                    <strong style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '80px' }} title={rule.pattern}>{rule.pattern}</strong>
+                                                    <span style={{ color: 'hsl(var(--muted-foreground) / 0.5)' }}>:</span>
+                                                    <span style={{ color: 'hsl(var(--accent))', fontFamily: 'ui-monospace, monospace', fontSize: '0.6875rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '60px' }} title={rule.replacement}>{rule.replacement}</span>
                                                     <button
                                                         onClick={() => handleDeleteRule(rule.pattern)}
-                                                        style={{ background: 'none', border: 'none', color: 'hsl(var(--muted-foreground))', fontSize: '1rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '2px', transition: 'color 0.15s' }}
+                                                        style={{ background: 'none', border: 'none', padding: 0, margin: '0 0 0 2px', color: 'hsl(var(--muted-foreground))', cursor: 'pointer', fontSize: '0.875rem', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '12px', height: '12px', transition: 'color 0.15s' }}
                                                         onMouseEnter={e => e.currentTarget.style.color = 'hsl(var(--destructive))'}
                                                         onMouseLeave={e => e.currentTarget.style.color = 'hsl(var(--muted-foreground))'}
                                                     >
                                                         &times;
                                                     </button>
-                                                </div>
+                                                </span>
                                             ))
                                         )}
                                     </div>
-                                </div>
+                                ))}
+
+                                {/* Accordion 3: Advanced Options */}
+                                {renderAccordionSection("Advanced Options", isOptionsOpen, () => setIsOptionsOpen(!isOptionsOpen), (
+                                    <div style={{ display: 'flex', gap: '8px', paddingTop: '4px' }}>
+                                        <button
+                                            onClick={() => setIsCaseSensitive(v => !v)}
+                                            style={{
+                                                flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                                                padding: '8px 10px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 600,
+                                                cursor: 'pointer', border: '1px solid', transition: 'all 0.15s',
+                                                background: isCaseSensitive ? 'hsl(var(--accent) / 0.08)' : 'transparent',
+                                                borderColor: isCaseSensitive ? 'hsl(var(--accent) / 0.3)' : 'hsl(var(--border))',
+                                                color: isCaseSensitive ? 'hsl(var(--accent))' : 'hsl(var(--muted-foreground))'
+                                            }}
+                                        >
+                                            <CaseSensitive size={13} />
+                                            Aa
+                                        </button>
+                                        <button
+                                            onClick={() => setIsWholeWord(v => !v)}
+                                            style={{
+                                                flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                                                padding: '8px 10px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 600,
+                                                cursor: 'pointer', border: '1px solid', transition: 'all 0.15s',
+                                                background: isWholeWord ? 'hsl(var(--accent) / 0.08)' : 'transparent',
+                                                borderColor: isWholeWord ? 'hsl(var(--accent) / 0.3)' : 'hsl(var(--border))',
+                                                color: isWholeWord ? 'hsl(var(--accent))' : 'hsl(var(--muted-foreground))'
+                                            }}
+                                        >
+                                            <WholeWord size={13} />
+                                            [W]
+                                        </button>
+                                    </div>
+                                ))}
+
                             </div>
                         )}
-
-                        {/* Settings Button Toggles */}
-                        <div style={{ padding: '0 20px 20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                            <div style={{ display: 'flex', gap: '8px' }}>
-                                <button
-                                    onClick={() => setIsCaseSensitive(v => !v)}
-                                    style={{
-                                        flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                                        padding: '8px 10px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 600,
-                                        cursor: 'pointer', border: '1px solid', transition: 'all 0.15s',
-                                        background: isCaseSensitive ? 'hsl(var(--accent) / 0.08)' : 'transparent',
-                                        borderColor: isCaseSensitive ? 'hsl(var(--accent) / 0.3)' : 'hsl(var(--border))',
-                                        color: isCaseSensitive ? 'hsl(var(--accent))' : 'hsl(var(--muted-foreground))'
-                                    }}
-                                >
-                                    <CaseSensitive size={13} />
-                                    Aa
-                                </button>
-                                <button
-                                    onClick={() => setIsWholeWord(v => !v)}
-                                    style={{
-                                        flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                                        padding: '8px 10px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 600,
-                                        cursor: 'pointer', border: '1px solid', transition: 'all 0.15s',
-                                        background: isWholeWord ? 'hsl(var(--accent) / 0.08)' : 'transparent',
-                                        borderColor: isWholeWord ? 'hsl(var(--accent) / 0.3)' : 'hsl(var(--border))',
-                                        color: isWholeWord ? 'hsl(var(--accent))' : 'hsl(var(--muted-foreground))'
-                                    }}
-                                >
-                                    <WholeWord size={13} />
-                                    [W]
-                                </button>
-                            </div>
-                        </div>
 
                         {/* Stats Badges */}
                         <div style={{ background: 'hsl(var(--muted) / 0.2)', borderTop: '1px solid hsl(var(--border))', display: 'flex' }}>
