@@ -3,7 +3,7 @@ import {
     Upload, Download, FileText, Settings, Type,
     CaseSensitive, WholeWord, Loader, FileDown,
     Plus, Search, Trash2, ArrowLeft, Shield, Check,
-    ChevronRight, FolderOpen, Clock
+    ChevronRight, FolderOpen, Clock, Sun, Moon
 } from 'lucide-react';
 import { getAllProjects, saveProject, deleteProject } from './db';
 
@@ -155,6 +155,22 @@ const App = () => {
         load('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js', 'pdf-js');
         load('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', 'jspdf-js');
     }, []);
+
+    // ── Theme ─────────────────────────────────────────────────────
+    const [isDark, setIsDark] = useState(() => {
+        const stored = localStorage.getItem('redacta-theme');
+        if (stored) return stored === 'dark';
+        return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    });
+
+    useEffect(() => {
+        const root = document.documentElement;
+        if (isDark) root.classList.add('dark');
+        else root.classList.remove('dark');
+        localStorage.setItem('redacta-theme', isDark ? 'dark' : 'light');
+    }, [isDark]);
+
+    const toggleTheme = () => setIsDark(v => !v);
 
     // ── Load projects from IndexedDB ──────────────────────────────────────────
     useEffect(() => {
@@ -324,8 +340,25 @@ const App = () => {
     // ─────────────────────────────────────────────────────────────────────────
     if (currentView === 'dashboard') {
         return (
-            <div style={{ minHeight: '100dvh', background: 'hsl(var(--background))', color: 'hsl(var(--foreground))' }}>
+            <div style={{ minHeight: '100dvh', background: 'hsl(var(--background))', color: 'hsl(var(--foreground))', position: 'relative' }}>
                 <main style={{ margin: '0 auto', maxWidth: '720px', padding: '64px 24px', display: 'flex', flexDirection: 'column', minHeight: '100dvh' }} className="animate-in">
+
+                    {/* Theme toggle — top right */}
+                    <div style={{ position: 'absolute', top: '24px', right: '24px' }}>
+                        <button
+                            id="theme-toggle"
+                            onClick={toggleTheme}
+                            aria-label="Toggle theme"
+                            style={{ position: 'relative', padding: '8px', borderRadius: '8px', border: '1px solid hsl(var(--border))', background: 'hsl(var(--muted) / 0.4)', cursor: 'pointer', color: 'hsl(var(--muted-foreground))', transition: 'background 0.15s, color 0.15s', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                            onMouseEnter={e => e.currentTarget.style.background = 'hsl(var(--muted))'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'hsl(var(--muted) / 0.4)'}
+                        >
+                            {isDark
+                                ? <Sun size={16} style={{ transition: 'transform 0.2s' }} />
+                                : <Moon size={16} style={{ transition: 'transform 0.2s' }} />
+                            }
+                        </button>
+                    </div>
 
                     {/* ── Title block ── */}
                     <div style={{ marginBottom: '40px' }}>
@@ -431,7 +464,7 @@ const App = () => {
 
                     {/* ── Footer ── */}
                     <p style={{ marginTop: '48px', fontSize: '0.75rem', color: 'hsl(var(--muted-foreground))' }}>
-                        Built by <a href="https://charlz.dev" target="_blank" rel="noreferrer" style={{ color: 'hsl(var(--foreground))', fontWeight: 500 }}>Charlz</a> · <a href="https://redacta.charlz.dev" target="_blank" rel="noreferrer" style={{ color: 'hsl(var(--muted-foreground))' }}>redacta.charlz.dev</a>
+                        Built by <a href="https://charlz.dev" target="_blank" rel="noreferrer" style={{ color: 'hsl(var(--foreground))', fontWeight: 500 }}>Charlz</a>
                     </p>
                 </main>
 
@@ -516,6 +549,22 @@ const App = () => {
                         </span>
                     </div>
 
+                    {/* Right: theme toggle + save status */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <button
+                        id="theme-toggle-editor"
+                        onClick={toggleTheme}
+                        aria-label="Toggle theme"
+                        style={{ position: 'relative', padding: '6px', borderRadius: '8px', border: '1px solid hsl(var(--border))', background: 'hsl(var(--muted) / 0.4)', cursor: 'pointer', color: 'hsl(var(--muted-foreground))', transition: 'background 0.15s', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'hsl(var(--muted))'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'hsl(var(--muted) / 0.4)'}
+                    >
+                        {isDark
+                            ? <Sun size={15} />
+                            : <Moon size={15} />
+                        }
+                    </button>
+
                     {/* Save status */}
                     <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.75rem' }}>
                         {isSaving ? (
@@ -529,6 +578,7 @@ const App = () => {
                                 <span style={{ color: 'hsl(var(--muted-foreground))' }}>Saved locally</span>
                             </>
                         )}
+                    </div>
                     </div>
                 </div>
             </header>
