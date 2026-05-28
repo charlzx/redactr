@@ -125,7 +125,52 @@ const App = () => {
     const [dashboardImportedFileName, setDashboardImportedFileName] = useState('');
     const dashboardFileInputRef = useRef(null);
 
+    // ── SEO & Page Metadata Management (Option A) ────────────────────────────
+    useEffect(() => {
+        let title = 'Redacta';
+        let description = 'Securely sanitise documents, redact sensitive PII (emails, phone numbers, credit cards), and apply custom regex replacement rules offline in your browser.';
+
+        if (currentView === 'dashboard') {
+            title = 'Redacta - Safe Local Document Redaction & Sanitisation';
+            description = 'Your zero-trust sandbox to securely sanitize documents, redact private details, and manage local files fully offline.';
+        } else if (currentView === 'editor') {
+            const activeProject = projects.find(p => p.id === activeProjectId);
+            const projName = activeProject ? activeProject.name : 'Document';
+            title = `Redacta Editor - ${projName}`;
+            description = `Sanitise and redact sensitive data from "${projName}" using client-side algorithmic scanners, sequential placeholders, and click-to-redact rules.`;
+        } else if (currentView === 'guide') {
+            const docSectionNames = {
+                'privacy': 'Privacy & Zero-Trust Security',
+                'ingestion': 'Document Ingestion & Workspaces',
+                'controls': 'Visual Rules & Settings Toggles',
+                'scanner': 'Client-Side PII Auto-Scanner',
+                'selection': 'Click-to-Redact Highlight Selection',
+                'regex': 'Custom RegEx Patterns & Templates',
+                'sequential': 'Smart Sequential Placeholders',
+                'export': 'Redaction Key Map Exports',
+                'document-exports': 'High-Fidelity Document & Key Exports',
+                'splits': 'Scroll-Synchronized Split View & Layouts',
+            };
+            const sectionName = docSectionNames[activeDocSection] || 'User Guide';
+            title = `Redacta Guide - ${sectionName}`;
+            description = `Step-by-step documentation on ${sectionName.toLowerCase()} and safe local data sanitisation workflows in Redacta.`;
+        }
+
+        // Update document title
+        document.title = title;
+
+        // Update document meta description
+        let metaDescription = document.querySelector('meta[name="description"]');
+        if (!metaDescription) {
+            metaDescription = document.createElement('meta');
+            metaDescription.setAttribute('name', 'description');
+            document.head.appendChild(metaDescription);
+        }
+        metaDescription.setAttribute('content', description);
+    }, [currentView, activeProjectId, projects, activeDocSection]);
+
     // ── Load external libs ────────────────────────────────────────────────────
+
     useEffect(() => {
         const load = (src, id) => {
             if (!document.getElementById(id)) {
