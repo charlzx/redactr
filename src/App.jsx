@@ -115,6 +115,9 @@ const App = () => {
     const redactedTextScrollRef = useRef(null);
     const downloadDropdownRef = useRef(null);
     const [isDownloadOpen, setIsDownloadOpen] = useState(false);
+    const [isControlsCollapsed, setIsControlsCollapsed] = useState(false);
+    const [isOriginalCollapsed, setIsOriginalCollapsed] = useState(false);
+    const [isOutputCollapsed, setIsOutputCollapsed] = useState(false);
 
     // ── Dashboard UI state ────────────────────────────────────────────────────
     const [searchQuery, setSearchQuery] = useState('');
@@ -1194,7 +1197,7 @@ const App = () => {
                                 title="Documentation"
                             >
                                 <HelpCircle size={15} style={{ color: 'hsl(var(--accent))' }} />
-                                <span>User Guide</span>
+                                <span className="hidden sm:inline">User Guide</span>
                             </button>
                             <button
                                 id="theme-toggle"
@@ -1545,20 +1548,37 @@ const App = () => {
                     <div style={{ border: '1px solid hsl(var(--border))', borderRadius: '10px', background: 'hsl(var(--card))', overflow: 'hidden' }}>
                         
                         {/* Header */}
-                        <div style={{ padding: '16px 20px', borderBottom: '1px solid hsl(var(--border))', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <h2 style={{ fontWeight: 700, fontSize: '0.875rem', letterSpacing: '-0.01em', margin: 0, display: 'flex', alignItems: 'center', gap: '6px', color: 'hsl(var(--foreground))' }}>
-                                <Shield size={14} style={{ color: 'hsl(var(--accent))' }} />
-                                Text Controls
-                            </h2>
-                            <button
-                                onClick={() => setIsEditingRawRules(!isEditingRawRules)}
-                                style={{ background: 'transparent', border: 'none', color: 'hsl(var(--muted-foreground))', fontSize: '0.725rem', fontWeight: 600, cursor: 'pointer', transition: 'color 0.15s', textTransform: 'uppercase', letterSpacing: '0.03em' }}
-                                onMouseEnter={e => e.currentTarget.style.color = 'hsl(var(--foreground))'}
-                                onMouseLeave={e => e.currentTarget.style.color = 'hsl(var(--muted-foreground))'}
-                            >
-                                {isEditingRawRules ? 'Visual Mode' : 'Raw Text'}
-                            </button>
+                        <div style={{ padding: '16px 20px', borderBottom: isControlsCollapsed ? 'none' : '1px solid hsl(var(--border))', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsControlsCollapsed(!isControlsCollapsed)}
+                                    style={{ background: 'transparent', border: 'none', color: 'hsl(var(--muted-foreground))', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '4px', cursor: 'pointer', transition: 'color 0.15s' }}
+                                    onMouseEnter={e => e.currentTarget.style.color = 'hsl(var(--foreground))'}
+                                    onMouseLeave={e => e.currentTarget.style.color = 'hsl(var(--muted-foreground))'}
+                                    aria-label={isControlsCollapsed ? "Expand Text Controls" : "Collapse Text Controls"}
+                                >
+                                    {isControlsCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+                                </button>
+                                <h2 style={{ fontWeight: 700, fontSize: '0.875rem', letterSpacing: '-0.01em', margin: 0, display: 'flex', alignItems: 'center', gap: '6px', color: 'hsl(var(--foreground))' }}>
+                                    <Shield size={14} style={{ color: 'hsl(var(--accent))' }} />
+                                    Text Controls
+                                </h2>
+                            </div>
+                            {!isControlsCollapsed && (
+                                <button
+                                    type="button"
+                                    onClick={() => setIsEditingRawRules(!isEditingRawRules)}
+                                    style={{ background: 'transparent', border: 'none', color: 'hsl(var(--muted-foreground))', fontSize: '0.725rem', fontWeight: 600, cursor: 'pointer', transition: 'color 0.15s', textTransform: 'uppercase', letterSpacing: '0.03em' }}
+                                    onMouseEnter={e => e.currentTarget.style.color = 'hsl(var(--foreground))'}
+                                    onMouseLeave={e => e.currentTarget.style.color = 'hsl(var(--muted-foreground))'}
+                                >
+                                    {isEditingRawRules ? 'Visual Mode' : 'Raw Text'}
+                                </button>
+                            )}
                         </div>
+                        {!isControlsCollapsed && (
+                            <>
 
                         {/* Rules Body */}
                         {isEditingRawRules ? (
@@ -1881,6 +1901,8 @@ const App = () => {
                                 </span>
                             </div>
                         </div>
+                            </>
+                        )}
 
                     </div>
                 </aside>
@@ -1900,8 +1922,18 @@ const App = () => {
                         }}
                     >
                         {/* Panel header */}
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: '1px solid hsl(var(--border))', flexWrap: 'wrap', gap: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: isOriginalCollapsed ? 'none' : '1px solid hsl(var(--border))', flexWrap: 'wrap', gap: '8px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsOriginalCollapsed(!isOriginalCollapsed)}
+                                    style={{ background: 'transparent', border: 'none', color: 'hsl(var(--muted-foreground))', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '4px', cursor: 'pointer', transition: 'color 0.15s' }}
+                                    onMouseEnter={e => e.currentTarget.style.color = 'hsl(var(--foreground))'}
+                                    onMouseLeave={e => e.currentTarget.style.color = 'hsl(var(--muted-foreground))'}
+                                    aria-label={isOriginalCollapsed ? "Expand Original Text" : "Collapse Original Text"}
+                                >
+                                    {isOriginalCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+                                </button>
                                 <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>Original text</span>
                                 {importedFileName && (
                                     <span style={{ fontSize: '0.6875rem', fontFamily: 'ui-monospace, monospace', fontWeight: 600, padding: '2px 7px', borderRadius: '4px', background: 'hsl(var(--muted))', color: 'hsl(var(--muted-foreground))', border: '1px solid hsl(var(--border))', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -1910,31 +1942,37 @@ const App = () => {
                                 )}
                             </div>
                             
-                            <div style={{ display: 'flex', background: 'hsl(var(--muted))', borderRadius: '6px', padding: '2px', border: '1px solid hsl(var(--border))' }}>
-                                <button
-                                    onClick={() => setEditorMode('edit')}
-                                    style={{
-                                        padding: '4px 8px', fontSize: '0.75rem', fontWeight: 600, borderRadius: '4px', border: 'none', cursor: 'pointer', transition: 'all 0.15s',
-                                        background: editorMode === 'edit' ? 'hsl(var(--card))' : 'transparent',
-                                        color: editorMode === 'edit' ? 'hsl(var(--foreground))' : 'hsl(var(--muted-foreground))',
-                                        boxShadow: editorMode === 'edit' ? '0 1px 3px hsl(0 0% 0% / 0.1)' : 'none'
-                                    }}
-                                >
-                                    Edit
-                                </button>
-                                <button
-                                    onClick={() => setEditorMode('highlight')}
-                                    style={{
-                                        padding: '4px 8px', fontSize: '0.75rem', fontWeight: 600, borderRadius: '4px', border: 'none', cursor: 'pointer', transition: 'all 0.15s',
-                                        background: editorMode === 'highlight' ? 'hsl(var(--card))' : 'transparent',
-                                        color: editorMode === 'highlight' ? 'hsl(var(--foreground))' : 'hsl(var(--muted-foreground))',
-                                        boxShadow: editorMode === 'highlight' ? '0 1px 3px hsl(0 0% 0% / 0.1)' : 'none'
-                                    }}
-                                >
-                                    Highlights
-                                </button>
-                            </div>
+                            {!isOriginalCollapsed && (
+                                <div style={{ display: 'flex', background: 'hsl(var(--muted))', borderRadius: '6px', padding: '2px', border: '1px solid hsl(var(--border))' }}>
+                                    <button
+                                        type="button"
+                                        onClick={() => setEditorMode('edit')}
+                                        style={{
+                                            padding: '4px 8px', fontSize: '0.75rem', fontWeight: 600, borderRadius: '4px', border: 'none', cursor: 'pointer', transition: 'all 0.15s',
+                                            background: editorMode === 'edit' ? 'hsl(var(--card))' : 'transparent',
+                                            color: editorMode === 'edit' ? 'hsl(var(--foreground))' : 'hsl(var(--muted-foreground))',
+                                            boxShadow: editorMode === 'edit' ? '0 1px 3px hsl(0 0% 0% / 0.1)' : 'none'
+                                        }}
+                                    >
+                                        Edit
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setEditorMode('highlight')}
+                                        style={{
+                                            padding: '4px 8px', fontSize: '0.75rem', fontWeight: 600, borderRadius: '4px', border: 'none', cursor: 'pointer', transition: 'all 0.15s',
+                                            background: editorMode === 'highlight' ? 'hsl(var(--card))' : 'transparent',
+                                            color: editorMode === 'highlight' ? 'hsl(var(--foreground))' : 'hsl(var(--muted-foreground))',
+                                            boxShadow: editorMode === 'highlight' ? '0 1px 3px hsl(0 0% 0% / 0.1)' : 'none'
+                                        }}
+                                    >
+                                        Highlights
+                                    </button>
+                                </div>
+                            )}
                         </div>
+                        {!isOriginalCollapsed && (
+                            <>
 
                         {editorMode === 'highlight' ? (
                             renderHighlightedOriginalText()
@@ -2038,6 +2076,8 @@ const App = () => {
                         )}
                             </>
                         )}
+                            </>
+                        )}
                     </div>
 
                     {/* Redacted output */}
@@ -2048,27 +2088,41 @@ const App = () => {
                                 <span style={{ fontSize: '0.875rem', fontWeight: 500, color: 'hsl(var(--muted-foreground))' }}>Generating PDF…</span>
                             </div>
                         )}
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: '1px solid hsl(var(--border))', flexWrap: 'wrap', gap: '8px' }}>
-                            <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>Sanitised output</span>
-                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-                                {/* Copy Button */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: isOutputCollapsed ? 'none' : '1px solid hsl(var(--border))', flexWrap: 'wrap', gap: '8px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <button
-                                    onClick={() => handleCopy(redactedText, 'redacted')}
-                                    style={{
-                                        display: 'inline-flex', alignItems: 'center', gap: '5px',
-                                        padding: '5px 10px', border: '1px solid hsl(var(--border))',
-                                        borderRadius: '6px', fontSize: '0.8125rem', fontWeight: 500,
-                                        cursor: 'pointer', transition: 'all 0.15s',
-                                        background: lastCopied === 'redacted' ? 'hsl(var(--background))' : 'hsl(var(--background))',
-                                        color: lastCopied === 'redacted' ? 'hsl(var(--accent))' : 'hsl(var(--muted-foreground))',
-                                        borderColor: lastCopied === 'redacted' ? 'hsl(var(--accent) / 0.4)' : 'hsl(var(--border))'
-                                    }}
-                                    onMouseEnter={e => e.currentTarget.style.background = 'hsl(var(--muted))'}
-                                    onMouseLeave={e => e.currentTarget.style.background = 'hsl(var(--background))'}
+                                    type="button"
+                                    onClick={() => setIsOutputCollapsed(!isOutputCollapsed)}
+                                    style={{ background: 'transparent', border: 'none', color: 'hsl(var(--muted-foreground))', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '4px', cursor: 'pointer', transition: 'color 0.15s' }}
+                                    onMouseEnter={e => e.currentTarget.style.color = 'hsl(var(--foreground))'}
+                                    onMouseLeave={e => e.currentTarget.style.color = 'hsl(var(--muted-foreground))'}
+                                    aria-label={isOutputCollapsed ? "Expand Sanitised Output" : "Collapse Sanitised Output"}
                                 >
-                                    {lastCopied === 'redacted' ? <Check size={12} /> : null}
-                                    {lastCopied === 'redacted' ? 'Copied!' : 'Copy'}
+                                    {isOutputCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
                                 </button>
+                                <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>Sanitised output</span>
+                            </div>
+                            {!isOutputCollapsed && (
+                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                                    {/* Copy Button */}
+                                    <button
+                                        type="button"
+                                        onClick={() => handleCopy(redactedText, 'redacted')}
+                                        style={{
+                                            display: 'inline-flex', alignItems: 'center', gap: '5px',
+                                            padding: '5px 10px', border: '1px solid hsl(var(--border))',
+                                            borderRadius: '6px', fontSize: '0.8125rem', fontWeight: 500,
+                                            cursor: 'pointer', transition: 'all 0.15s',
+                                            background: lastCopied === 'redacted' ? 'hsl(var(--background))' : 'hsl(var(--background))',
+                                            color: lastCopied === 'redacted' ? 'hsl(var(--accent))' : 'hsl(var(--muted-foreground))',
+                                            borderColor: lastCopied === 'redacted' ? 'hsl(var(--accent) / 0.4)' : 'hsl(var(--border))'
+                                        }}
+                                        onMouseEnter={e => e.currentTarget.style.background = 'hsl(var(--muted))'}
+                                        onMouseLeave={e => e.currentTarget.style.background = 'hsl(var(--background))'}
+                                    >
+                                        {lastCopied === 'redacted' ? <Check size={12} /> : null}
+                                        {lastCopied === 'redacted' ? 'Copied!' : 'Copy'}
+                                    </button>
 
                                 {/* Unified Download Dropdown */}
                                 <div ref={downloadDropdownRef} style={{ position: 'relative', display: 'inline-block' }}>
@@ -2189,18 +2243,21 @@ const App = () => {
                                     )}
                                 </div>
                             </div>
-                        </div>
-                         <div
-                            ref={redactedTextScrollRef}
-                            id="redacted-output-content"
-                            style={{
-                                padding: '16px', fontSize: '0.875rem', lineHeight: 1.65,
-                                whiteSpace: 'pre-wrap', wordBreak: 'break-word', overflowY: 'auto',
-                                color: 'hsl(var(--foreground))', boxSizing: 'border-box'
-                            }}
-                            className={layoutMode === 'side-by-side' ? 'editor-panel-viewport-side' : 'editor-panel-viewport-stacked'}
-                            dangerouslySetInnerHTML={{ __html: htmlRedactedText }}
-                        />
+                        )}
+                    </div>
+                    {!isOutputCollapsed && (
+                            <div
+                                ref={redactedTextScrollRef}
+                                id="redacted-output-content"
+                                style={{
+                                    padding: '16px', fontSize: '0.875rem', lineHeight: 1.65,
+                                    whiteSpace: 'pre-wrap', wordBreak: 'break-word', overflowY: 'auto',
+                                    color: 'hsl(var(--foreground))', boxSizing: 'border-box'
+                                }}
+                                className={layoutMode === 'side-by-side' ? 'editor-panel-viewport-side' : 'editor-panel-viewport-stacked'}
+                                dangerouslySetInnerHTML={{ __html: htmlRedactedText }}
+                            />
+                        )}
                     </div>
                 </div>
 

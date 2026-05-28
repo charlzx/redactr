@@ -1,7 +1,8 @@
 import React from 'react';
 import {
     Shield, FolderOpen, Settings, CaseSensitive, WholeWord,
-    Search, Check, Type, FileCode, Clock, Download, ArrowLeft
+    Search, Check, Type, FileCode, Clock, Download, ArrowLeft,
+    Menu, X
 } from 'lucide-react';
 
 export default function GuideView({
@@ -11,6 +12,20 @@ export default function GuideView({
     setDocSearchQuery,
     navigateToView
 }) {
+    const [isMobile, setIsMobile] = React.useState(window.innerWidth < 640);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+
+    React.useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth < 640);
+            if (window.innerWidth >= 640) {
+                setIsMobileMenuOpen(false);
+            }
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
     const docSections = [
         {
             id: 'privacy',
@@ -479,32 +494,40 @@ export default function GuideView({
             <header style={{ borderBottom: '1px solid hsl(var(--border))', background: 'hsl(var(--background) / 0.85)', backdropFilter: 'blur(12px)', position: 'sticky', top: 0, zIndex: 40 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 24px', maxWidth: '1200px', margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontWeight: 800, fontSize: '1.25rem', letterSpacing: '-0.02em', color: 'hsl(var(--foreground))' }}>Redacta</span>
+                        {isMobile && (
+                            <button
+                                type="button"
+                                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                                style={{
+                                    background: 'transparent', border: 'none', color: 'hsl(var(--foreground))',
+                                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                    padding: '6px', marginRight: '4px', cursor: 'pointer', borderRadius: '6px',
+                                    transition: 'background 0.15s'
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.background = 'hsl(var(--muted))'}
+                                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                                aria-label="Toggle Navigation Menu"
+                            >
+                                <Menu size={18} />
+                            </button>
+                        )}
+                        <span
+                            onClick={() => navigateToView('dashboard')}
+                            style={{ fontWeight: 800, fontSize: '1.25rem', letterSpacing: '-0.02em', color: 'hsl(var(--foreground))', cursor: 'pointer' }}
+                            title="Go to Homepage"
+                        >
+                            Redacta
+                        </span>
                         <span style={{ color: 'hsl(var(--muted-foreground) / 0.4)', fontSize: '0.875rem' }}>/</span>
                         <span style={{ fontSize: '0.875rem', fontWeight: 500, color: 'hsl(var(--muted-foreground))' }}>Guide</span>
                     </div>
-                    <button
-                        onClick={() => navigateToView('dashboard')}
-                        style={{
-                            display: 'inline-flex', alignItems: 'center', gap: '6px',
-                            background: 'hsl(var(--secondary))', color: 'hsl(var(--secondary-foreground))',
-                            border: '1px solid hsl(var(--border))', borderRadius: '6px', padding: '6px 12px',
-                            fontSize: '0.8125rem', fontWeight: 600, cursor: 'pointer',
-                            transition: 'background 0.15s'
-                        }}
-                        onMouseEnter={e => e.currentTarget.style.background = 'hsl(var(--border))'}
-                        onMouseLeave={e => e.currentTarget.style.background = 'hsl(var(--secondary))'}
-                    >
-                        <ArrowLeft size={14} />
-                        Back to Dashboard
-                    </button>
                 </div>
             </header>
 
             {/* Main Content Area */}
             <div style={{ flex: 1, maxWidth: '1200px', width: '100%', margin: '0 auto', display: 'flex', minHeight: 'calc(100dvh - 58px)', boxSizing: 'border-box' }} className="flex-row p-[12px] sm:p-[24px] gap-[12px] sm:gap-[24px] md:gap-[32px]">
                 {/* Sidebar navigation */}
-                <aside style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '20px' }} className="w-[50px] sm:w-[220px] md:w-[280px]">
+                <aside style={{ flexShrink: 0, display: isMobile ? 'none' : 'flex', flexDirection: 'column', gap: '20px' }} className="hidden sm:flex sm:w-[220px] md:w-[280px]">
                     {/* Search in guide */}
                     <div style={{ position: 'relative' }} className="hidden sm:block">
                         <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'hsl(var(--muted-foreground))', pointerEvents: 'none' }} />
@@ -548,7 +571,14 @@ export default function GuideView({
                                         return (
                                             <button
                                                 key={item.id}
-                                                onClick={() => setActiveDocSection(item.id)}
+                                                onClick={() => {
+                                                    if (isMobile) {
+                                                        setIsMobileMenuOpen(!isMobileMenuOpen);
+                                                        setActiveDocSection(item.id);
+                                                    } else {
+                                                        setActiveDocSection(item.id);
+                                                    }
+                                                }}
                                                 style={{
                                                     display: 'flex', alignItems: 'center', gap: '8px', width: '100%',
                                                     padding: '8px 10px', background: isActive ? 'hsl(var(--muted))' : 'transparent',
@@ -603,6 +633,127 @@ export default function GuideView({
                         {activeSectionData.content}
                     </div>
                 </main>
+
+                {/* Floating mobile navigation drawer */}
+                {isMobile && isMobileMenuOpen && (
+                    <>
+                        {/* Backdrop overlay */}
+                        <div
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            style={{
+                                position: 'fixed',
+                                inset: 0,
+                                background: 'rgba(0, 0, 0, 0.3)',
+                                backdropFilter: 'blur(2px)',
+                                zIndex: 45
+                            }}
+                        />
+                        {/* Drawer body */}
+                        <div
+                            className="animate-in"
+                            style={{
+                                position: 'fixed',
+                                left: 0,
+                                top: 0,
+                                bottom: 0,
+                                width: '270px',
+                                zIndex: 50,
+                                background: 'hsl(var(--card))',
+                                borderRight: '1px solid hsl(var(--border))',
+                                borderRadius: '0 12px 12px 0',
+                                boxShadow: '10px 0 30px rgba(0, 0, 0, 0.15)',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '20px',
+                                padding: '20px',
+                                boxSizing: 'border-box'
+                            }}
+                        >
+                            {/* Drawer header with close button */}
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '4px' }}>
+                                <span style={{ fontWeight: 800, fontSize: '1rem', letterSpacing: '-0.02em', color: 'hsl(var(--foreground))' }}>Guide Menu</span>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                    style={{
+                                        background: 'transparent', border: 'none', color: 'hsl(var(--muted-foreground))',
+                                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                        cursor: 'pointer', padding: '4px', borderRadius: '4px',
+                                        transition: 'background 0.15s'
+                                    }}
+                                    onMouseEnter={e => e.currentTarget.style.background = 'hsl(var(--muted))'}
+                                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                                    aria-label="Close Navigation Menu"
+                                >
+                                    <X size={18} />
+                                </button>
+                            </div>
+
+                            {/* Search bar inside drawer */}
+                            <div style={{ position: 'relative' }}>
+                                <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'hsl(var(--muted-foreground))', pointerEvents: 'none' }} />
+                                <input
+                                    type="text"
+                                    placeholder="Search guide..."
+                                    value={docSearchQuery}
+                                    onChange={e => setDocSearchQuery(e.target.value)}
+                                    style={{
+                                        width: '100%', padding: '8px 10px 8px 32px', fontSize: '0.8125rem',
+                                        background: 'hsl(var(--muted) / 0.5)', border: '1px solid hsl(var(--border))',
+                                        borderRadius: '6px', color: 'hsl(var(--foreground))',
+                                        outline: 'none', boxSizing: 'border-box'
+                                    }}
+                                />
+                            </div>
+
+                            {/* Full list of navigation categories & titles inside drawer */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto', flex: 1 }}>
+                                {['Core Architecture', 'Redaction Power Tools', 'Export & Layouts'].map((cat, i) => {
+                                    const items = filteredSections.filter(s => s.category === cat);
+                                    if (items.length === 0) return null;
+                                    return (
+                                        <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                            <span style={{ fontSize: '0.6875rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'hsl(var(--muted-foreground))', padding: '0 8px 4px' }}>
+                                                {cat}
+                                            </span>
+                                            {items.map(item => {
+                                                const NavIcon = item.icon;
+                                                const isActive = item.id === activeDocSection;
+                                                return (
+                                                    <button
+                                                        key={item.id}
+                                                        onClick={() => {
+                                                            setActiveDocSection(item.id);
+                                                            setIsMobileMenuOpen(false);
+                                                        }}
+                                                        style={{
+                                                            display: 'flex', alignItems: 'center', gap: '8px', width: '100%',
+                                                            padding: '8px 10px', background: isActive ? 'hsl(var(--muted))' : 'transparent',
+                                                            border: 'none', borderRadius: '6px', textAlign: 'left', cursor: 'pointer',
+                                                            transition: 'background 0.15s', color: isActive ? 'hsl(var(--foreground))' : 'hsl(var(--muted-foreground))'
+                                                        }}
+                                                        onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = 'hsl(var(--muted) / 0.4)'; }}
+                                                        onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
+                                                    >
+                                                        <NavIcon size={14} style={{ color: isActive ? 'hsl(var(--accent))' : 'inherit', flexShrink: 0 }} />
+                                                        <div style={{ minWidth: 0 }}>
+                                                            <div style={{ fontSize: '0.8125rem', fontWeight: isActive ? 600 : 500 }}>{item.title}</div>
+                                                        </div>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    );
+                                })}
+                                {filteredSections.length === 0 && (
+                                    <div style={{ fontSize: '0.8125rem', color: 'hsl(var(--muted-foreground))', textAlign: 'center', padding: '24px 0' }}>
+                                        No guide entries found
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </>
+                )}
             </div>
         </div>
     );
