@@ -150,6 +150,8 @@ const App = () => {
     const [ruleIsRegex, setRuleIsRegex] = useState(false);
     const [redactionMap, setRedactionMap] = useState({});
     const [editorMode, setEditorMode] = useState('edit');
+    const [htmlRedactedText, setHtmlRedactedText] = useState('');
+    const [layoutMode, setLayoutMode] = useState('stacked');
     const [isEditingRawRules, setIsEditingRawRules] = useState(false);
     const [isConfigRulesOpen, setIsConfigRulesOpen] = useState(true);
     const [isActiveRulesOpen, setIsActiveRulesOpen] = useState(true);
@@ -205,8 +207,23 @@ const App = () => {
 
     // ── Redaction engine ──────────────────────────────────────────────────────
     const performRedaction = useCallback(() => {
-        if (!originalText) { setRedactedText(''); setScannedWords(0); setMatchesFound(0); setRedactionMap({}); return; }
+        if (!originalText) { 
+            setRedactedText(''); 
+            setHtmlRedactedText(''); 
+            setScannedWords(0); 
+            setMatchesFound(0); 
+            setRedactionMap({}); 
+            return; 
+        }
         let text = originalText;
+        
+        let htmlText = originalText
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+
         let total = 0;
         const mapping = {};
         const pairs = wordsToRedact.split(',').map(s => {
@@ -214,7 +231,17 @@ const App = () => {
             return { pattern: (parts[0] || '').trim(), replacement: parts.length > 1 ? parts.slice(1).join(':').trim() : '***' };
         }).filter(p => p.pattern.length > 0);
 
-        pairs.forEach(({ pattern, replacement }) => {
+        const PALETTE = [
+            'hsl(213 100% 47%)', // Blue
+            'hsl(142 71% 45%)',  // Emerald
+            'hsl(262 83% 58%)',  // Violet
+            'hsl(24 94% 50%)',   // Orange
+            'hsl(339 90% 51%)',  // Rose
+            'hsl(187 92% 38%)',  // Teal
+            'hsl(47 95% 42%)',   // Amber
+        ];
+
+        pairs.forEach(({ pattern, replacement }, idx) => {
             try {
                 let re;
                 const isRegExPattern = pattern.startsWith('/') && pattern.endsWith('/') && pattern.length > 2;
@@ -228,6 +255,8 @@ const App = () => {
                     re = new RegExp(isWholeWord ? `\\b${escaped}\\b` : escaped, flags);
                 }
 
+                const color = PALETTE[idx % PALETTE.length];
+
                 if (replacement.includes('[SEQ]') || replacement.includes('{#}')) {
                     let seqCount = 1;
                     const matches = text.match(re);
@@ -240,6 +269,13 @@ const App = () => {
                             return rep;
                         });
                     }
+
+                    let htmlSeqCount = 1;
+                    htmlText = htmlText.replace(re, (match) => {
+                        const rep = replacement.replace('[SEQ]', htmlSeqCount).replace('{#}', htmlSeqCount);
+                        htmlSeqCount++;
+                        return `<span style="background: ${color}1a; border: 1px solid ${color}4d; color: ${color}; border-radius: 4px; padding: 1px 5px; font-weight: 600; font-family: ui-monospace, monospace; font-size: 0.75rem; white-space: nowrap;" title="Redacted by rule: ${pattern}">${rep}</span>`;
+                    });
                 } else {
                     const matches = text.match(re);
                     if (matches) {
@@ -248,12 +284,17 @@ const App = () => {
                             mapping[match] = replacement;
                         });
                         text = text.replace(re, replacement);
+                        
+                        htmlText = htmlText.replace(re, () => {
+                            return `<span style="background: ${color}1a; border: 1px solid ${color}4d; color: ${color}; border-radius: 4px; padding: 1px 5px; font-weight: 600; font-family: ui-monospace, monospace; font-size: 0.75rem; white-space: nowrap;" title="Redacted by rule: ${pattern}">${replacement}</span>`;
+                        });
                     }
                 }
             } catch (e) { console.error('Invalid regex', e); }
         });
 
         setRedactedText(text);
+        setHtmlRedactedText(htmlText);
         setScannedWords(originalText.trim().split(/\s+/).filter(Boolean).length);
         setMatchesFound(total);
         setRedactionMap(mapping);
@@ -316,6 +357,7 @@ const App = () => {
         setIsScanning(false);
         setSelectedText('');
         setEditorMode('edit');
+        setHtmlRedactedText('');
         setCurrentView('editor');
     };
 
@@ -1066,6 +1108,34 @@ const App = () => {
 
                     {/* Right: theme toggle + save status */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    {/* Segmented Layout Mode Controls */}
+                    <div style={{ display: 'flex', background: 'hsl(var(--muted))', borderRadius: '6px', padding: '2px', border: '1px solid hsl(var(--border))' }} className="hidden sm:flex">
+                        <button
+                            onClick={() => setLayoutMode('stacked')}
+                            title="Stacked Layout"
+                            style={{
+                                padding: '4px 8px', fontSize: '0.75rem', fontWeight: 600, borderRadius: '4px', border: 'none', cursor: 'pointer', transition: 'all 0.15s',
+                                background: layoutMode === 'stacked' ? 'hsl(var(--card))' : 'transparent',
+                                color: layoutMode === 'stacked' ? 'hsl(var(--foreground))' : 'hsl(var(--muted-foreground))',
+                                boxShadow: layoutMode === 'stacked' ? '0 1px 3px hsl(0 0% 0% / 0.1)' : 'none'
+                            }}
+                        >
+                            Stacked
+                        </button>
+                        <button
+                            onClick={() => setLayoutMode('side-by-side')}
+                            title="Side-by-side Layout"
+                            style={{
+                                padding: '4px 8px', fontSize: '0.75rem', fontWeight: 600, borderRadius: '4px', border: 'none', cursor: 'pointer', transition: 'all 0.15s',
+                                background: layoutMode === 'side-by-side' ? 'hsl(var(--card))' : 'transparent',
+                                color: layoutMode === 'side-by-side' ? 'hsl(var(--foreground))' : 'hsl(var(--muted-foreground))',
+                                boxShadow: layoutMode === 'side-by-side' ? '0 1px 3px hsl(0 0% 0% / 0.1)' : 'none'
+                            }}
+                        >
+                            Split View
+                        </button>
+                    </div>
+
                     <button
                         id="theme-toggle-editor"
                         onClick={toggleTheme}
@@ -1435,7 +1505,12 @@ const App = () => {
                 </aside>
 
                 {/* ── Right: Text panels ── */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: layoutMode === 'side-by-side' ? '1fr 1fr' : '1fr',
+                    gap: '20px',
+                    alignItems: 'start'
+                }}>
 
                     {/* Original text */}
                     <div
@@ -1632,7 +1707,7 @@ const App = () => {
                         <div
                             id="redacted-output-content"
                             style={{ minHeight: '260px', padding: '16px', fontSize: '0.875rem', lineHeight: 1.65, whiteSpace: 'pre-wrap', wordBreak: 'break-word', overflowY: 'auto', color: 'hsl(var(--foreground))' }}
-                            dangerouslySetInnerHTML={{ __html: redactedText }}
+                            dangerouslySetInnerHTML={{ __html: htmlRedactedText }}
                         />
                     </div>
                 </div>
