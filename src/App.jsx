@@ -812,81 +812,27 @@ const App = () => {
                     {/* Original text */}
                     <div
                         style={{
-                            border: `1px solid ${isDragging ? 'hsl(var(--accent))' : 'hsl(var(--border))'}`,
-                            borderRadius: '10px', background: isDragging ? 'hsl(var(--accent) / 0.04)' : 'hsl(var(--card))',
-                            position: 'relative', transition: 'border-color 0.15s, background 0.15s'
+                            border: '1px solid hsl(var(--border))',
+                            borderRadius: '10px', background: 'hsl(var(--card))',
+                            position: 'relative'
                         }}
-                        onDragOver={handleDragOver}
-                        onDragEnter={handleDragEnter}
-                        onDragLeave={handleDragLeave}
-                        onDrop={handleDrop}
                     >
-                        {/* Processing overlay */}
-                        {isProcessingFile && (
-                            <div style={{ position: 'absolute', inset: 0, background: 'hsl(var(--background) / 0.85)', backdropFilter: 'blur(6px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 10, borderRadius: '10px', gap: '12px' }}>
-                                <Loader size={28} style={{ animation: 'spin 1s linear infinite', color: 'hsl(var(--accent))' }} />
-                                <div style={{ textAlign: 'center' }}>
-                                    <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'hsl(var(--foreground))', margin: 0 }}>Extracting text…</p>
-                                    {importedFileName && <p style={{ fontSize: '0.75rem', color: 'hsl(var(--muted-foreground))', marginTop: '4px' }}>{importedFileName}</p>}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Drag overlay */}
-                        {isDragging && (
-                            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 10, borderRadius: '10px', gap: '10px', pointerEvents: 'none' }}>
-                                <Upload size={28} style={{ color: 'hsl(var(--accent))' }} />
-                                <p style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'hsl(var(--accent))', margin: 0 }}>Drop to import</p>
-                                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                                    {['.pdf', '.docx', '.md', '.txt', '.csv'].map(ext => (
-                                        <span key={ext} style={{ fontSize: '0.6875rem', fontFamily: 'ui-monospace, monospace', fontWeight: 600, padding: '2px 7px', borderRadius: '4px', background: 'hsl(var(--accent) / 0.1)', color: 'hsl(var(--accent))', border: '1px solid hsl(var(--accent) / 0.25)' }}>{ext}</span>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
                         {/* Panel header */}
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: '1px solid hsl(var(--border))', flexWrap: 'wrap', gap: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: '1px solid hsl(var(--border))' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>Original text</span>
-                                {importedFileName && !isProcessingFile && (
+                                {importedFileName && (
                                     <span style={{ fontSize: '0.6875rem', fontFamily: 'ui-monospace, monospace', fontWeight: 600, padding: '2px 7px', borderRadius: '4px', background: 'hsl(var(--muted))', color: 'hsl(var(--muted-foreground))', border: '1px solid hsl(var(--border))', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                         {importedFileName}
                                     </span>
                                 )}
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                {/* Format chips */}
-                                <div style={{ display: 'flex', gap: '4px' }}>
-                                    {['.pdf', '.docx', '.md', '.txt', '.csv'].map(ext => (
-                                        <span key={ext} title={`Supports ${ext}`} style={{ fontSize: '0.625rem', fontFamily: 'ui-monospace, monospace', fontWeight: 600, padding: '2px 5px', borderRadius: '4px', background: 'hsl(var(--muted))', color: 'hsl(var(--muted-foreground))', border: '1px solid hsl(var(--border))' }}>{ext}</span>
-                                    ))}
-                                </div>
-                                <label htmlFor="file-upload" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.8125rem', fontWeight: 500, color: 'hsl(var(--muted-foreground))', cursor: 'pointer', border: '1px solid hsl(var(--border))', borderRadius: '6px', padding: '5px 10px', background: 'hsl(var(--background))', transition: 'background 0.15s', whiteSpace: 'nowrap' }}
-                                    onMouseEnter={e => e.currentTarget.style.background = 'hsl(var(--muted))'}
-                                    onMouseLeave={e => e.currentTarget.style.background = 'hsl(var(--background))'}
-                                >
-                                    <Upload size={13} /> Import
-                                </label>
-                                <input id="file-upload" type="file" style={{ display: 'none' }} onChange={handleFileUpload} accept=".txt,.csv,.md,.docx,.pdf" />
-                            </div>
                         </div>
-
-                        {/* Empty drag-hint state */}
-                        {!originalText && !isProcessingFile && (
-                            <div
-                                style={{ position: 'absolute', inset: '60px 0 0 0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', pointerEvents: 'none', opacity: 0.4 }}
-                            >
-                                <Upload size={22} style={{ color: 'hsl(var(--muted-foreground))' }} />
-                                <p style={{ fontSize: '0.8125rem', color: 'hsl(var(--muted-foreground))', margin: 0 }}>Drop a file or click Import</p>
-                                <p style={{ fontSize: '0.75rem', color: 'hsl(var(--muted-foreground))', margin: 0 }}>PDF · Word · Markdown · CSV · TXT</p>
-                            </div>
-                        )}
 
                         <textarea
                             value={originalText}
                             onChange={e => { setOriginalText(e.target.value); if (!e.target.value) setImportedFileName(''); }}
-                            placeholder=""
+                            placeholder="Type or paste your content here..."
                             style={{
                                 width: '100%', boxSizing: 'border-box', minHeight: '260px',
                                 background: 'transparent', border: 'none', outline: 'none',
