@@ -792,7 +792,7 @@ const App = () => {
             </header>
 
             {/* ── Main workspace ── */}
-            <main style={{ maxWidth: '1100px', margin: '0 auto', padding: '32px 24px', display: 'grid', gridTemplateColumns: '260px 1fr', gap: '24px', alignItems: 'start' }} className="animate-in">
+            <main style={{ maxWidth: '1360px', margin: '0 auto', padding: '24px 16px', display: 'grid', gridTemplateColumns: '300px 1fr', gap: '20px', alignItems: 'start' }} className="animate-in">
 
                 {/* ── Left: Controls ── */}
                 <aside>
