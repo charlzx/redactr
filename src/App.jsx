@@ -22,6 +22,13 @@ function relativeTime(ts) {
     return new Date(ts).toLocaleDateString();
 }
 
+const RULE_TEMPLATES = [
+    { name: 'Email Regex', pattern: '/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}/', replacement: '[EMAIL_[SEQ]]', isRegex: true },
+    { name: 'Phone Regex', pattern: '/(?:\\+?\\d{1,3}[-.\\s]?)?\\(?\\d{3}\\)?[-\\s.]?\\d{3}[-\\s.]?\\d{4}/', replacement: '[PHONE_[SEQ]]', isRegex: true },
+    { name: 'Credit Card Regex', pattern: '/\\b\\d{4}[-.\\s]?\\d{4}[-.\\s]?\\d{4}[-.\\s]?\\d{4}\\b/', replacement: '[CARD_[SEQ]]', isRegex: true },
+    { name: 'SSN Regex', pattern: '/\\b\\d{3}-\\d{2}-\\d{4}\\b/', replacement: '[SSN_[SEQ]]', isRegex: true },
+];
+
 // ── Project row component (mirrors json-editor ProjectRow) ────────────────────
 
 function ProjectRow({ project, onOpen, onDelete }) {
@@ -140,6 +147,7 @@ const App = () => {
     const [isSaving, setIsSaving] = useState(false);
     const [rulePattern, setRulePattern] = useState('');
     const [ruleReplacement, setRuleReplacement] = useState('');
+    const [ruleIsRegex, setRuleIsRegex] = useState(false);
     const [isEditingRawRules, setIsEditingRawRules] = useState(false);
     const [isConfigRulesOpen, setIsConfigRulesOpen] = useState(true);
     const [isActiveRulesOpen, setIsActiveRulesOpen] = useState(true);
@@ -205,9 +213,17 @@ const App = () => {
 
         pairs.forEach(({ pattern, replacement }) => {
             try {
-                const escaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                const flags = isCaseSensitive ? 'g' : 'gi';
-                const re = new RegExp(isWholeWord ? `\\b${escaped}\\b` : escaped, flags);
+                let re;
+                const isRegExPattern = pattern.startsWith('/') && pattern.endsWith('/') && pattern.length > 2;
+                if (isRegExPattern) {
+                    const innerPattern = pattern.slice(1, -1);
+                    const flags = isCaseSensitive ? 'g' : 'gi';
+                    re = new RegExp(innerPattern, flags);
+                } else {
+                    const escaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    const flags = isCaseSensitive ? 'g' : 'gi';
+                    re = new RegExp(isWholeWord ? `\\b${escaped}\\b` : escaped, flags);
+                }
                 const m = text.match(re);
                 if (m) total += m.length;
                 text = text.replace(re, replacement);
@@ -332,8 +348,14 @@ const App = () => {
 
     const handleAddRule = (e) => {
         if (e) e.preventDefault();
-        const pat = rulePattern.trim();
+        let pat = rulePattern.trim();
         if (!pat) return;
+
+        if (ruleIsRegex) {
+            if (!pat.startsWith('/') || !pat.endsWith('/')) {
+                pat = `/${pat}/`;
+            }
+        }
 
         const rep = ruleReplacement.trim() || '***';
         const newRuleStr = rep === '***' ? pat : `${pat}:${rep}`;
@@ -359,6 +381,7 @@ const App = () => {
         setWordsToRedact(newWordsStr);
         setRulePattern('');
         setRuleReplacement('');
+        setRuleIsRegex(false);
     };
 
     const handleDeleteRule = (patternToDelete) => {
@@ -1011,21 +1034,68 @@ const App = () => {
                                 {/* Accordion 1: Configure Rules */}
                                 {renderAccordionSection("Configure Rules", isConfigRulesOpen, () => setIsConfigRulesOpen(!isConfigRulesOpen), (
                                     <form onSubmit={handleAddRule} style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingTop: '4px' }}>
-                                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                        <select
+                                            onChange={e => {
+                                                const idx = parseInt(e.target.value, 10);
+                                                if (!isNaN(idx) && idx >= 0) {
+                                                    const t = RULE_TEMPLATES[idx];
+                                                    setRulePattern(t.pattern);
+                                                    setRuleReplacement(t.replacement);
+                                                    setRuleIsRegex(t.isRegex);
+                                                } else {
+                                                    setRulePattern('');
+                                                    setRuleReplacement('');
+                                                    setRuleIsRegex(false);
+                                                }
+                                                e.target.value = "";
+                                            }}
+                                            style={{
+                                                width: '100%', boxSizing: 'border-box',
+                                                background: 'hsl(var(--muted) / 0.5)', border: '1px solid hsl(var(--border))',
+                                                borderRadius: '6px', padding: '6px 10px', fontSize: '0.75rem',
+                                                color: 'hsl(var(--muted-foreground))', outline: 'none', transition: 'border-color 0.15s',
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            <option value="">-- Rule Template --</option>
+                                            {RULE_TEMPLATES.map((t, idx) => (
+                                                <option key={idx} value={idx}>{t.name}</option>
+                                            ))}
+                                        </select>
+
+                                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                                             <input
                                                 type="text"
-                                                placeholder="Redact..."
+                                                placeholder={ruleIsRegex ? "Regex Pattern" : "Redact..."}
                                                 value={rulePattern}
                                                 onChange={e => setRulePattern(e.target.value)}
                                                 style={{
-                                                    flex: 1, minWidth: 0, boxSizing: 'border-box',
+                                                    flex: 1.2, minWidth: 0, boxSizing: 'border-box',
                                                     background: 'hsl(var(--muted) / 0.5)', border: '1px solid hsl(var(--border))',
                                                     borderRadius: '6px', padding: '8px 10px', fontSize: '0.8125rem',
-                                                    color: 'hsl(var(--foreground))', outline: 'none', transition: 'border-color 0.15s'
+                                                    color: 'hsl(var(--foreground))', outline: 'none', transition: 'border-color 0.15s',
+                                                    fontFamily: ruleIsRegex ? 'ui-monospace, monospace' : 'inherit'
                                                 }}
                                                 onFocus={e => e.target.style.borderColor = 'hsl(var(--accent))'}
                                                 onBlur={e => e.target.style.borderColor = 'hsl(var(--border))'}
                                             />
+                                            <button
+                                                type="button"
+                                                onClick={() => setRuleIsRegex(v => !v)}
+                                                title="Toggle Regular Expression"
+                                                style={{
+                                                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                    width: '34px', height: '34px', borderRadius: '6px',
+                                                    background: ruleIsRegex ? 'hsl(var(--accent) / 0.1)' : 'transparent',
+                                                    border: '1px solid',
+                                                    borderColor: ruleIsRegex ? 'hsl(var(--accent) / 0.3)' : 'hsl(var(--border))',
+                                                    color: ruleIsRegex ? 'hsl(var(--accent))' : 'hsl(var(--muted-foreground))',
+                                                    cursor: 'pointer', transition: 'all 0.15s', flexShrink: 0,
+                                                    fontSize: '0.875rem', fontWeight: 700, fontFamily: 'ui-monospace, monospace'
+                                                }}
+                                            >
+                                                .*
+                                            </button>
                                             <input
                                                 type="text"
                                                 placeholder="With..."
@@ -1065,29 +1135,37 @@ const App = () => {
                                                 No active rules. Add one above!
                                             </span>
                                         ) : (
-                                            activeRules.map((rule, idx) => (
-                                                <span
-                                                    key={idx}
-                                                    style={{
-                                                        display: 'inline-flex', alignItems: 'center', gap: '5px',
-                                                        padding: '3px 8px', borderRadius: '9999px', fontSize: '0.75rem',
-                                                        background: 'hsl(var(--muted) / 0.5)', border: '1px solid hsl(var(--border))',
-                                                        color: 'hsl(var(--foreground))', transition: 'all 0.15s'
-                                                    }}
-                                                >
-                                                    <strong style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '80px' }} title={rule.pattern}>{rule.pattern}</strong>
-                                                    <span style={{ color: 'hsl(var(--muted-foreground) / 0.5)' }}>:</span>
-                                                    <span style={{ color: 'hsl(var(--accent))', fontFamily: 'ui-monospace, monospace', fontSize: '0.6875rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '60px' }} title={rule.replacement}>{rule.replacement}</span>
-                                                    <button
-                                                        onClick={() => handleDeleteRule(rule.pattern)}
-                                                        style={{ background: 'none', border: 'none', padding: 0, margin: '0 0 0 2px', color: 'hsl(var(--muted-foreground))', cursor: 'pointer', fontSize: '0.875rem', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '12px', height: '12px', transition: 'color 0.15s' }}
-                                                        onMouseEnter={e => e.currentTarget.style.color = 'hsl(var(--destructive))'}
-                                                        onMouseLeave={e => e.currentTarget.style.color = 'hsl(var(--muted-foreground))'}
+                                            activeRules.map((rule, idx) => {
+                                                const isReg = rule.pattern.startsWith('/') && rule.pattern.endsWith('/') && rule.pattern.length > 2;
+                                                return (
+                                                    <span
+                                                        key={idx}
+                                                        style={{
+                                                            display: 'inline-flex', alignItems: 'center', gap: '5px',
+                                                            padding: '3px 8px', borderRadius: '9999px', fontSize: '0.75rem',
+                                                            background: 'hsl(var(--muted) / 0.5)', border: '1px solid hsl(var(--border))',
+                                                            color: 'hsl(var(--foreground))', transition: 'all 0.15s'
+                                                        }}
                                                     >
-                                                        &times;
-                                                    </button>
-                                                </span>
-                                            ))
+                                                        {isReg && (
+                                                            <span style={{ fontSize: '8px', fontWeight: 800, padding: '1px 3px', borderRadius: '3px', background: 'hsl(var(--accent) / 0.15)', color: 'hsl(var(--accent))', lineHeight: 1 }}>
+                                                                RE
+                                                            </span>
+                                                        )}
+                                                        <strong style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '80px' }} title={rule.pattern}>{rule.pattern}</strong>
+                                                        <span style={{ color: 'hsl(var(--muted-foreground) / 0.5)' }}>:</span>
+                                                        <span style={{ color: 'hsl(var(--accent))', fontFamily: 'ui-monospace, monospace', fontSize: '0.6875rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '60px' }} title={rule.replacement}>{rule.replacement}</span>
+                                                        <button
+                                                            onClick={() => handleDeleteRule(rule.pattern)}
+                                                            style={{ background: 'none', border: 'none', padding: 0, margin: '0 0 0 2px', color: 'hsl(var(--muted-foreground))', cursor: 'pointer', fontSize: '0.875rem', display: 'inline-flex', alignItems: 'center', width: '12px', height: '12px', transition: 'color 0.15s' }}
+                                                            onMouseEnter={e => e.currentTarget.style.color = 'hsl(var(--destructive))'}
+                                                            onMouseLeave={e => e.currentTarget.style.color = 'hsl(var(--muted-foreground))'}
+                                                        >
+                                                            &times;
+                                                        </button>
+                                                    </span>
+                                                );
+                                            })
                                         )}
                                     </div>
                                 ))}
