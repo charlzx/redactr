@@ -148,6 +148,7 @@ const App = () => {
     const [rulePattern, setRulePattern] = useState('');
     const [ruleReplacement, setRuleReplacement] = useState('');
     const [ruleIsRegex, setRuleIsRegex] = useState(false);
+    const [redactionMap, setRedactionMap] = useState({});
     const [isEditingRawRules, setIsEditingRawRules] = useState(false);
     const [isConfigRulesOpen, setIsConfigRulesOpen] = useState(true);
     const [isActiveRulesOpen, setIsActiveRulesOpen] = useState(true);
@@ -203,9 +204,10 @@ const App = () => {
 
     // ── Redaction engine ──────────────────────────────────────────────────────
     const performRedaction = useCallback(() => {
-        if (!originalText) { setRedactedText(''); setScannedWords(0); setMatchesFound(0); return; }
+        if (!originalText) { setRedactedText(''); setScannedWords(0); setMatchesFound(0); setRedactionMap({}); return; }
         let text = originalText;
         let total = 0;
+        const mapping = {};
         const pairs = wordsToRedact.split(',').map(s => {
             const parts = s.split(':');
             return { pattern: (parts[0] || '').trim(), replacement: parts.length > 1 ? parts.slice(1).join(':').trim() : '***' };
@@ -224,15 +226,36 @@ const App = () => {
                     const flags = isCaseSensitive ? 'g' : 'gi';
                     re = new RegExp(isWholeWord ? `\\b${escaped}\\b` : escaped, flags);
                 }
-                const m = text.match(re);
-                if (m) total += m.length;
-                text = text.replace(re, replacement);
+
+                if (replacement.includes('[SEQ]') || replacement.includes('{#}')) {
+                    let seqCount = 1;
+                    const matches = text.match(re);
+                    if (matches) {
+                        total += matches.length;
+                        text = text.replace(re, (match) => {
+                            const rep = replacement.replace('[SEQ]', seqCount).replace('{#}', seqCount);
+                            mapping[match] = rep;
+                            seqCount++;
+                            return rep;
+                        });
+                    }
+                } else {
+                    const matches = text.match(re);
+                    if (matches) {
+                        total += matches.length;
+                        matches.forEach(match => {
+                            mapping[match] = replacement;
+                        });
+                        text = text.replace(re, replacement);
+                    }
+                }
             } catch (e) { console.error('Invalid regex', e); }
         });
 
         setRedactedText(text);
         setScannedWords(originalText.trim().split(/\s+/).filter(Boolean).length);
         setMatchesFound(total);
+        setRedactionMap(mapping);
     }, [originalText, wordsToRedact, isCaseSensitive, isWholeWord]);
 
     useEffect(() => { performRedaction(); }, [performRedaction]);
@@ -629,6 +652,28 @@ const App = () => {
         const blob = new Blob([redactedText], { type: 'text/plain' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a'); a.href = url; a.download = 'redacted-text.txt';
+        document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+    };
+
+    const handleDownloadKeyJson = () => {
+        if (Object.keys(redactionMap).length === 0) { alert('No redactions performed yet.'); return; }
+        const blob = new Blob([JSON.stringify(redactionMap, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'redaction-key.json';
+        document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+    };
+
+    const handleDownloadKeyCsv = () => {
+        if (Object.keys(redactionMap).length === 0) { alert('No redactions performed yet.'); return; }
+        let csvContent = 'Original,Replacement\n';
+        Object.entries(redactionMap).forEach(([orig, rep]) => {
+            const escapedOrig = orig.replace(/"/g, '""');
+            const escapedRep = rep.replace(/"/g, '""');
+            csvContent += `"${escapedOrig}","${escapedRep}"\n`;
+        });
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'redaction-key.csv';
         document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
     };
 
@@ -1453,6 +1498,8 @@ const App = () => {
                             <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
                                 {[
                                     { label: 'Copy', onClick: () => handleCopy(redactedText, 'redacted'), active: lastCopied === 'redacted', variant: 'outline' },
+                                    { label: 'Export JSON Key', onClick: handleDownloadKeyJson, variant: 'outline', disabled: Object.keys(redactionMap).length === 0 },
+                                    { label: 'Export CSV Key', onClick: handleDownloadKeyCsv, variant: 'outline', disabled: Object.keys(redactionMap).length === 0 },
                                     { label: '.txt', onClick: handleDownloadTxt, icon: <Download size={12} />, variant: 'outline' },
                                     { label: 'Download PDF', onClick: handleDownloadPdf, icon: <FileDown size={12} />, variant: 'primary', disabled: isGeneratingPdf },
                                 ].map(({ label, onClick, icon, active, variant, disabled }) => (
