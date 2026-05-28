@@ -149,6 +149,7 @@ const App = () => {
     const [ruleReplacement, setRuleReplacement] = useState('');
     const [ruleIsRegex, setRuleIsRegex] = useState(false);
     const [redactionMap, setRedactionMap] = useState({});
+    const [editorMode, setEditorMode] = useState('edit');
     const [isEditingRawRules, setIsEditingRawRules] = useState(false);
     const [isConfigRulesOpen, setIsConfigRulesOpen] = useState(true);
     const [isActiveRulesOpen, setIsActiveRulesOpen] = useState(true);
@@ -310,6 +311,11 @@ const App = () => {
         setWordsToRedact(proj.wordsToRedact);
         setIsCaseSensitive(proj.isCaseSensitive);
         setIsWholeWord(proj.isWholeWord);
+        setPiiSuggestions([]);
+        setIsScannerOpen(false);
+        setIsScanning(false);
+        setSelectedText('');
+        setEditorMode('edit');
         setCurrentView('editor');
     };
 
@@ -547,6 +553,73 @@ const App = () => {
             textareaRef.current.selectionStart = textareaRef.current.selectionEnd;
             textareaRef.current.focus();
         }
+    };
+
+    const renderHighlightedOriginalText = () => {
+        if (!originalText) {
+            return (
+                <div style={{ padding: '16px', color: 'hsl(var(--muted-foreground))', fontStyle: 'italic', fontSize: '0.875rem' }}>
+                    Type or paste some content first to see matched highlights.
+                </div>
+            );
+        }
+
+        let safeText = originalText
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+
+        const pairs = wordsToRedact.split(',').map(s => {
+            const parts = s.split(':');
+            return { pattern: (parts[0] || '').trim(), replacement: parts.length > 1 ? parts.slice(1).join(':').trim() : '***' };
+        }).filter(p => p.pattern.length > 0);
+
+        if (pairs.length === 0) {
+            return (
+                <div style={{ padding: '16px', fontSize: '0.875rem', lineHeight: 1.65, color: 'hsl(var(--foreground))', whiteSpace: 'pre-wrap', wordBreak: 'break-word', minHeight: '260px', maxHeight: '400px', overflowY: 'auto' }}>
+                    {originalText}
+                </div>
+            );
+        }
+
+        pairs.forEach(({ pattern, replacement }) => {
+            try {
+                let re;
+                const isRegExPattern = pattern.startsWith('/') && pattern.endsWith('/') && pattern.length > 2;
+                if (isRegExPattern) {
+                    const innerPattern = pattern.slice(1, -1);
+                    const flags = isCaseSensitive ? 'g' : 'gi';
+                    re = new RegExp(innerPattern, flags);
+                } else {
+                    const escaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    const flags = isCaseSensitive ? 'g' : 'gi';
+                    re = new RegExp(isWholeWord ? `\\b${escaped}\\b` : escaped, flags);
+                }
+
+                safeText = safeText.replace(re, (match) => {
+                    return `<span style="background: hsl(38 92% 50% / 0.18); border-bottom: 2px solid hsl(38 92% 50%); border-radius: 2px; padding: 1px 2px; font-weight: 600; cursor: help;" title="Matched Rule: ${pattern} &rarr; ${replacement}">${match}</span>`;
+                });
+            } catch (e) { console.error('Highlight regex error', e); }
+        });
+
+        return (
+            <div
+                style={{
+                    padding: '16px',
+                    fontSize: '0.875rem',
+                    lineHeight: 1.65,
+                    color: 'hsl(var(--foreground))',
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-word',
+                    minHeight: '260px',
+                    maxHeight: '400px',
+                    overflowY: 'auto'
+                }}
+                dangerouslySetInnerHTML={{ __html: safeText }}
+            />
+        );
     };
 
     // ── File handlers ─────────────────────────────────────────────────────────
@@ -1382,24 +1455,53 @@ const App = () => {
                                     </span>
                                 )}
                             </div>
+                            
+                            <div style={{ display: 'flex', background: 'hsl(var(--muted))', borderRadius: '6px', padding: '2px', border: '1px solid hsl(var(--border))' }}>
+                                <button
+                                    onClick={() => setEditorMode('edit')}
+                                    style={{
+                                        padding: '4px 8px', fontSize: '0.75rem', fontWeight: 600, borderRadius: '4px', border: 'none', cursor: 'pointer', transition: 'all 0.15s',
+                                        background: editorMode === 'edit' ? 'hsl(var(--card))' : 'transparent',
+                                        color: editorMode === 'edit' ? 'hsl(var(--foreground))' : 'hsl(var(--muted-foreground))',
+                                        boxShadow: editorMode === 'edit' ? '0 1px 3px hsl(0 0% 0% / 0.1)' : 'none'
+                                    }}
+                                >
+                                    Edit
+                                </button>
+                                <button
+                                    onClick={() => setEditorMode('highlight')}
+                                    style={{
+                                        padding: '4px 8px', fontSize: '0.75rem', fontWeight: 600, borderRadius: '4px', border: 'none', cursor: 'pointer', transition: 'all 0.15s',
+                                        background: editorMode === 'highlight' ? 'hsl(var(--card))' : 'transparent',
+                                        color: editorMode === 'highlight' ? 'hsl(var(--foreground))' : 'hsl(var(--muted-foreground))',
+                                        boxShadow: editorMode === 'highlight' ? '0 1px 3px hsl(0 0% 0% / 0.1)' : 'none'
+                                    }}
+                                >
+                                    Highlights
+                                </button>
+                            </div>
                         </div>
 
-                        <textarea
-                            ref={textareaRef}
-                            value={originalText}
-                            onChange={e => { setOriginalText(e.target.value); if (!e.target.value) setImportedFileName(''); }}
-                            onMouseUp={handleTextareaSelection}
-                            onKeyUp={handleTextareaSelection}
-                            placeholder="Type or paste your content here..."
-                            style={{
-                                width: '100%', boxSizing: 'border-box', minHeight: '260px',
-                                background: 'transparent', border: 'none', outline: 'none',
-                                padding: '16px', resize: 'vertical', fontSize: '0.875rem',
-                                lineHeight: 1.65, color: 'hsl(var(--foreground))',
-                                fontFamily: 'inherit', borderRadius: '0 0 10px 10px',
-                                position: 'relative', zIndex: 1
-                            }}
-                        />
+                        {editorMode === 'highlight' ? (
+                            renderHighlightedOriginalText()
+                        ) : (
+                            <>
+                                <textarea
+                                    ref={textareaRef}
+                                    value={originalText}
+                                    onChange={e => { setOriginalText(e.target.value); if (!e.target.value) setImportedFileName(''); }}
+                                    onMouseUp={handleTextareaSelection}
+                                    onKeyUp={handleTextareaSelection}
+                                    placeholder="Type or paste your content here..."
+                                    style={{
+                                        width: '100%', boxSizing: 'border-box', minHeight: '260px',
+                                        background: 'transparent', border: 'none', outline: 'none',
+                                        padding: '16px', resize: 'vertical', fontSize: '0.875rem',
+                                        lineHeight: 1.65, color: 'hsl(var(--foreground))',
+                                        fontFamily: 'inherit', borderRadius: '0 0 10px 10px',
+                                        position: 'relative', zIndex: 1
+                                    }}
+                                />
                         {processingError && (
                             <p style={{ padding: '0 16px 12px', fontSize: '0.75rem', color: 'hsl(var(--destructive))', display: 'flex', alignItems: 'center', gap: '5px' }}>
                                 ⚠ {processingError}
@@ -1482,6 +1584,8 @@ const App = () => {
                                     </button>
                                 </div>
                             </div>
+                        )}
+                            </>
                         )}
                     </div>
 
