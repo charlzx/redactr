@@ -802,7 +802,7 @@ const App = () => {
                         <div style={{ padding: '16px 20px', borderBottom: '1px solid hsl(var(--border))', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                             <h2 style={{ fontWeight: 700, fontSize: '0.875rem', letterSpacing: '-0.01em', margin: 0, display: 'flex', alignItems: 'center', gap: '6px', color: 'hsl(var(--foreground))' }}>
                                 <Shield size={14} style={{ color: 'hsl(var(--accent))' }} />
-                                Redaction Rules
+                                Text Controls
                             </h2>
                             <button
                                 onClick={() => setIsEditingRawRules(!isEditingRawRules)}
@@ -842,18 +842,18 @@ const App = () => {
                         ) : (
                             <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                 {/* Form to add rule */}
-                                <form onSubmit={handleAddRule} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                    <div>
-                                        <label style={{ display: 'block', fontSize: '0.725rem', fontWeight: 600, color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
-                                            Add Rule
-                                        </label>
+                                <form onSubmit={handleAddRule} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    <label style={{ display: 'block', fontSize: '0.725rem', fontWeight: 600, color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2px' }}>
+                                        Add Rule
+                                    </label>
+                                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                                         <input
                                             type="text"
-                                            placeholder="Word or phrase to redact..."
+                                            placeholder="Redact..."
                                             value={rulePattern}
                                             onChange={e => setRulePattern(e.target.value)}
                                             style={{
-                                                width: '100%', boxSizing: 'border-box',
+                                                flex: 1, minWidth: 0, boxSizing: 'border-box',
                                                 background: 'hsl(var(--muted) / 0.5)', border: '1px solid hsl(var(--border))',
                                                 borderRadius: '6px', padding: '8px 10px', fontSize: '0.8125rem',
                                                 color: 'hsl(var(--foreground))', outline: 'none', transition: 'border-color 0.15s'
@@ -861,15 +861,13 @@ const App = () => {
                                             onFocus={e => e.target.style.borderColor = 'hsl(var(--accent))'}
                                             onBlur={e => e.target.style.borderColor = 'hsl(var(--border))'}
                                         />
-                                    </div>
-                                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                                         <input
                                             type="text"
-                                            placeholder="Replacement (e.g. [SECRET], default ***)"
+                                            placeholder="With..."
                                             value={ruleReplacement}
                                             onChange={e => setRuleReplacement(e.target.value)}
                                             style={{
-                                                flex: 1, boxSizing: 'border-box', minWidth: 0,
+                                                flex: 1, minWidth: 0, boxSizing: 'border-box',
                                                 background: 'hsl(var(--muted) / 0.5)', border: '1px solid hsl(var(--border))',
                                                 borderRadius: '6px', padding: '8px 10px', fontSize: '0.8125rem',
                                                 color: 'hsl(var(--foreground))', outline: 'none', transition: 'border-color 0.15s'
