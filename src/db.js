@@ -31,15 +31,13 @@ export const initDB = () => {
  * @returns {Promise<Array>}
  */
 export const getAllProjects = () => {
-    return new Promise(async (resolve, reject) => {
-        try {
-            const db = await initDB();
+    return initDB().then(db => {
+        return new Promise((resolve, reject) => {
             const transaction = db.transaction(STORE_NAME, 'readonly');
             const store = transaction.objectStore(STORE_NAME);
             const request = store.getAll();
             
             request.onsuccess = () => {
-                // Sort projects by updated time (newest first)
                 const projects = request.result || [];
                 projects.sort((a, b) => b.updatedAt - a.updatedAt);
                 resolve(projects);
@@ -47,9 +45,7 @@ export const getAllProjects = () => {
             request.onerror = () => {
                 reject(request.error);
             };
-        } catch (err) {
-            reject(err);
-        }
+        });
     });
 };
 
@@ -59,9 +55,8 @@ export const getAllProjects = () => {
  * @returns {Promise<void>}
  */
 export const saveProject = (project) => {
-    return new Promise(async (resolve, reject) => {
-        try {
-            const db = await initDB();
+    return initDB().then(db => {
+        return new Promise((resolve, reject) => {
             const transaction = db.transaction(STORE_NAME, 'readwrite');
             const store = transaction.objectStore(STORE_NAME);
             const request = store.put(project);
@@ -72,9 +67,7 @@ export const saveProject = (project) => {
             request.onerror = () => {
                 reject(request.error);
             };
-        } catch (err) {
-            reject(err);
-        }
+        });
     });
 };
 
@@ -84,9 +77,8 @@ export const saveProject = (project) => {
  * @returns {Promise<void>}
  */
 export const deleteProject = (id) => {
-    return new Promise(async (resolve, reject) => {
-        try {
-            const db = await initDB();
+    return initDB().then(db => {
+        return new Promise((resolve, reject) => {
             const transaction = db.transaction(STORE_NAME, 'readwrite');
             const store = transaction.objectStore(STORE_NAME);
             const request = store.delete(id);
@@ -97,8 +89,6 @@ export const deleteProject = (id) => {
             request.onerror = () => {
                 reject(request.error);
             };
-        } catch (err) {
-            reject(err);
-        }
+        });
     });
 };

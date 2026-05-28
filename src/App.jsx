@@ -124,28 +124,32 @@ const App = () => {
     useEffect(() => {
         if (!activeProjectId) return;
 
-        const triggerAutoSave = async () => {
+        const triggerAutoSave = () => {
             setIsSaving(true);
-            const activeProj = projects.find(p => p.id === activeProjectId);
-            if (!activeProj) return;
+            setProjects(prev => {
+                const activeProj = prev.find(p => p.id === activeProjectId);
+                if (!activeProj) {
+                    setIsSaving(false);
+                    return prev;
+                }
 
-            const updatedProj = {
-                ...activeProj,
-                originalText,
-                wordsToRedact,
-                isCaseSensitive,
-                isWholeWord,
-                updatedAt: Date.now()
-            };
+                const updatedProj = {
+                    ...activeProj,
+                    originalText,
+                    wordsToRedact,
+                    isCaseSensitive,
+                    isWholeWord,
+                    updatedAt: Date.now()
+                };
 
-            try {
-                await saveProject(updatedProj);
-                setProjects(prev => prev.map(p => p.id === activeProjectId ? updatedProj : p));
-            } catch (err) {
-                console.error("Failed to auto-save project:", err);
-            } finally {
-                setTimeout(() => setIsSaving(false), 300);
-            }
+                saveProject(updatedProj)
+                    .catch(err => console.error("Failed to auto-save project:", err))
+                    .finally(() => {
+                        setTimeout(() => setIsSaving(false), 300);
+                    });
+
+                return prev.map(p => p.id === activeProjectId ? updatedProj : p);
+            });
         };
 
         const timer = setTimeout(() => {
