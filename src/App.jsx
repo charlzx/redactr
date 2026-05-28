@@ -1457,9 +1457,9 @@ const App = () => {
 
             {/* ── Header (matches json-editor header style) ── */}
             <header style={{ borderBottom: '1px solid hsl(var(--border))', background: 'hsl(var(--background) / 0.85)', backdropFilter: 'blur(12px)', position: 'sticky', top: 0, zIndex: 40 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '12px 24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px' }} className="px-[12px] sm:px-[24px] py-[12px] gap-[6px] xs:gap-[12px] w-full box-border">
                     {/* Breadcrumb: Projects / name */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
                         <button
                             id="back-to-projects"
                             onClick={() => navigateToView('dashboard')}
@@ -1468,16 +1468,16 @@ const App = () => {
                             onMouseLeave={e => e.currentTarget.style.color = 'hsl(var(--muted-foreground))'}
                         >
                             <ArrowLeft size={15} />
-                            <span>Projects</span>
+                            <span className="hidden xs:inline">Projects</span>
                         </button>
                         <span style={{ color: 'hsl(var(--muted-foreground) / 0.4)', fontSize: '0.875rem' }}>/</span>
-                        <span style={{ fontWeight: 600, fontSize: '0.9375rem', letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '200px' }}>
+                        <span style={{ fontWeight: 600, fontSize: '0.9375rem', letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} className="max-w-[70px] xs:max-w-[120px] sm:max-w-[200px]">
                             {activeProject?.name ?? 'Workspace'}
                         </span>
                     </div>
 
                     {/* Right: theme toggle + save status */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }} className="gap-[6px] xs:gap-[12px] shrink-0">
                     {/* Segmented Layout Mode Controls */}
                     <div style={{ display: 'flex', background: 'hsl(var(--muted))', borderRadius: '6px', padding: '2px', border: '1px solid hsl(var(--border))' }} className="hidden sm:flex">
                         <button
@@ -1521,16 +1521,16 @@ const App = () => {
                     </button>
 
                     {/* Save status */}
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.75rem' }}>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem' }} className="shrink-0">
                         {isSaving ? (
                             <>
                                 <Loader size={11} style={{ animation: 'spin 1s linear infinite', color: 'hsl(var(--accent))' }} />
-                                <span style={{ color: 'hsl(var(--accent))' }}>Saving…</span>
+                                <span style={{ color: 'hsl(var(--accent))' }} className="hidden xs:inline">Saving…</span>
                             </>
                         ) : (
                             <>
                                 <Check size={11} style={{ color: '#22c55e' }} />
-                                <span style={{ color: 'hsl(var(--muted-foreground))' }}>Saved locally</span>
+                                <span style={{ color: 'hsl(var(--muted-foreground))' }} className="hidden xs:inline">Saved</span>
                             </>
                         )}
                     </div>
@@ -1538,10 +1538,10 @@ const App = () => {
                 </div>
             </header>
 
-            <main style={{ maxWidth: '1360px', margin: '0 auto', padding: '24px 16px', gap: '20px' }} className="animate-in grid grid-cols-1 lg:grid-cols-[300px_1fr] items-start w-full box-border">
+            <main style={{ maxWidth: '1360px', margin: '0 auto', padding: '24px 16px', gap: '20px' }} className="animate-in grid grid-cols-1 md:grid-cols-[300px_1fr] items-start w-full box-border">
 
                 {/* ── Left: Controls ── */}
-                <aside className="lg:sticky lg:top-[80px] z-10 w-full lg:max-h-[calc(100vh-100px)] lg:overflow-y-auto overflow-x-hidden scrollbar-thin">
+                <aside className="md:sticky md:top-[80px] z-10 w-full md:max-h-[calc(100vh-100px)] md:overflow-y-auto overflow-x-hidden scrollbar-thin">
                     <div style={{ border: '1px solid hsl(var(--border))', borderRadius: '10px', background: 'hsl(var(--card))', overflow: 'hidden' }}>
                         
                         {/* Header */}

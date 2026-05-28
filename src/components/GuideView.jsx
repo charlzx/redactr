@@ -502,11 +502,11 @@ export default function GuideView({
             </header>
 
             {/* Main Content Area */}
-            <div style={{ flex: 1, maxWidth: '1200px', width: '100%', margin: '0 auto', padding: '24px', display: 'flex', gap: '32px', boxSizing: 'border-box' }} className="flex-col md:flex-row min-h-[calc(100dvh-58px)]">
+            <div style={{ flex: 1, maxWidth: '1200px', width: '100%', margin: '0 auto', display: 'flex', minHeight: 'calc(100dvh - 58px)', boxSizing: 'border-box' }} className="flex-row p-[12px] sm:p-[24px] gap-[12px] sm:gap-[24px] md:gap-[32px]">
                 {/* Sidebar navigation */}
-                <aside style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '20px' }} className="w-full md:w-[280px]">
+                <aside style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '20px' }} className="w-[50px] sm:w-[220px] md:w-[280px]">
                     {/* Search in guide */}
-                    <div style={{ position: 'relative' }}>
+                    <div style={{ position: 'relative' }} className="hidden sm:block">
                         <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'hsl(var(--muted-foreground))', pointerEvents: 'none' }} />
                         <input
                             type="text"
@@ -532,13 +532,14 @@ export default function GuideView({
                     </div>
 
                     {/* Navigation List grouped by Category */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto' }} className="max-h-[180px] md:max-h-[calc(100dvh-160px)] pr-[4px]">
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto' }} className="max-h-[calc(100dvh-120px)] pr-[4px]">
                         {['Core Architecture', 'Redaction Power Tools', 'Export & Layouts'].map((cat, i) => {
                             const items = filteredSections.filter(s => s.category === cat);
                             if (items.length === 0) return null;
                             return (
                                 <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                    <span style={{ fontSize: '0.6875rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'hsl(var(--muted-foreground))', padding: '0 8px 4px' }}>
+                                    {i > 0 && <div className="block sm:hidden h-[1px] bg-border my-[6px]" />}
+                                    <span style={{ fontSize: '0.6875rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'hsl(var(--muted-foreground))', padding: '0 8px 4px' }} className="hidden sm:block">
                                         {cat}
                                     </span>
                                     {items.map(item => {
@@ -554,11 +555,12 @@ export default function GuideView({
                                                     border: 'none', borderRadius: '6px', textAlign: 'left', cursor: 'pointer',
                                                     transition: 'background 0.15s', color: isActive ? 'hsl(var(--foreground))' : 'hsl(var(--muted-foreground))'
                                                 }}
+                                                className="justify-center sm:justify-start"
                                                 onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = 'hsl(var(--muted) / 0.4)'; }}
                                                 onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
                                             >
-                                                <NavIcon size={14} style={{ color: isActive ? 'hsl(var(--accent))' : 'inherit' }} />
-                                                <div style={{ minWidth: 0 }}>
+                                                <NavIcon size={14} style={{ color: isActive ? 'hsl(var(--accent))' : 'inherit', flexShrink: 0 }} />
+                                                <div style={{ minWidth: 0 }} className="hidden sm:block">
                                                     <div style={{ fontSize: '0.8125rem', fontWeight: isActive ? 600 : 500 }}>{item.title}</div>
                                                 </div>
                                             </button>
