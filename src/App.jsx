@@ -3,24 +3,14 @@ import {
     Upload, Download, FileText, Settings, Type,
     CaseSensitive, WholeWord, Loader, FileDown,
     Plus, Search, Trash2, ArrowLeft, Shield, Check,
-    ChevronRight, FolderOpen, Clock, Sun, Moon
+    ChevronRight, ChevronDown, FolderOpen, Clock, Sun, Moon,
+    HelpCircle, BookOpen, Sparkles, FileCode, Info
 } from 'lucide-react';
 import { getAllProjects, saveProject, deleteProject } from './db';
+import ProjectRow from './components/ProjectRow';
+import GuideView from './components/GuideView';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-
-function relativeTime(ts) {
-    const diff = Date.now() - ts;
-    const s = Math.floor(diff / 1000);
-    if (s < 60) return 'just now';
-    const m = Math.floor(s / 60);
-    if (m < 60) return `${m}m ago`;
-    const h = Math.floor(m / 60);
-    if (h < 24) return `${h}h ago`;
-    const d = Math.floor(h / 24);
-    if (d < 7) return `${d}d ago`;
-    return new Date(ts).toLocaleDateString();
-}
 
 const RULE_TEMPLATES = [
     { name: 'Email Regex', pattern: '/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}/', replacement: '[EMAIL_[SEQ]]', isRegex: true },
@@ -28,84 +18,6 @@ const RULE_TEMPLATES = [
     { name: 'Credit Card Regex', pattern: '/\\b\\d{4}[-.\\s]?\\d{4}[-.\\s]?\\d{4}[-.\\s]?\\d{4}\\b/', replacement: '[CARD_[SEQ]]', isRegex: true },
     { name: 'SSN Regex', pattern: '/\\b\\d{3}-\\d{2}-\\d{4}\\b/', replacement: '[SSN_[SEQ]]', isRegex: true },
 ];
-
-// ── Project row component (mirrors json-editor ProjectRow) ────────────────────
-
-function ProjectRow({ project, onOpen, onDelete }) {
-    const [confirmDelete, setConfirmDelete] = useState(false);
-    const rulesCount = project.wordsToRedact.split(',').filter(r => r.trim()).length;
-
-    return (
-        <div
-            onClick={onOpen}
-            className="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border px-4 py-5 hover:bg-muted/40 transition-colors duration-150 cursor-pointer first:rounded-t-lg last:rounded-b-lg last:border-b-0"
-            style={{ backgroundColor: 'hsl(var(--card) / 0.2)' }}
-        >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
-                <Shield
-                    size={16}
-                    style={{ color: 'hsl(var(--muted-foreground))', flexShrink: 0, transition: 'color 0.15s' }}
-                    className="group-hover:text-foreground"
-                />
-                <div style={{ minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                        <span style={{ fontWeight: 500, fontSize: '0.875rem', lineHeight: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'hsl(var(--foreground))' }}>
-                            {project.name}
-                        </span>
-                        <span style={{
-                            display: 'inline-flex', alignItems: 'center', gap: '3px',
-                            borderRadius: '9999px', padding: '2px 8px', fontSize: '10px', fontWeight: 500,
-                            background: 'hsl(213 100% 47% / 0.08)',
-                            border: '1px solid hsl(213 100% 47% / 0.2)',
-                            color: 'hsl(var(--accent))'
-                        }}>
-                            {rulesCount} {rulesCount === 1 ? 'rule' : 'rules'}
-                        </span>
-                    </div>
-                    {project.originalText && (
-                        <p style={{ fontSize: '0.75rem', color: 'hsl(var(--muted-foreground))', marginTop: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '40ch' }}>
-                            {project.originalText.slice(0, 80)}
-                        </p>
-                    )}
-                </div>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', color: 'hsl(var(--muted-foreground))' }}>
-                    <Clock size={13} />
-                    {relativeTime(project.updatedAt)}
-                </span>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: '90px', justifyContent: 'flex-end' }}>
-                    {confirmDelete ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'hsl(var(--background) / 0.9)', border: '1px solid hsl(var(--border))', borderRadius: '6px', padding: '4px 8px' }}>
-                            <button onClick={onDelete} style={{ fontSize: '0.75rem', fontWeight: 600, color: 'hsl(var(--destructive))', cursor: 'pointer', background: 'none', border: 'none' }}>
-                                Delete
-                            </button>
-                            <span style={{ color: 'hsl(var(--muted-foreground))', fontSize: '0.75rem' }}>/</span>
-                            <button onClick={() => setConfirmDelete(false)} style={{ fontSize: '0.75rem', color: 'hsl(var(--muted-foreground))', cursor: 'pointer', background: 'none', border: 'none' }}>
-                                Cancel
-                            </button>
-                        </div>
-                    ) : (
-                        <>
-                            <button
-                                onClick={() => setConfirmDelete(true)}
-                                title="Delete project"
-                                style={{ padding: '6px', borderRadius: '6px', cursor: 'pointer', background: 'none', border: 'none', color: 'hsl(var(--muted-foreground))', transition: 'color 0.15s, background 0.15s' }}
-                                onMouseEnter={e => { e.currentTarget.style.background = 'hsl(0 75% 50% / 0.1)'; e.currentTarget.style.color = 'hsl(var(--destructive))'; }}
-                                onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'hsl(var(--muted-foreground))'; }}
-                            >
-                                <Trash2 size={15} />
-                            </button>
-                            <ChevronRight size={15} style={{ color: 'hsl(var(--muted-foreground))', transition: 'color 0.15s' }} className="group-hover:text-foreground hidden sm:block" />
-                        </>
-                    )}
-                </div>
-            </div>
-        </div>
-    );
-}
 
 // ── Stat pill (compact, flat — no gradient cards) ─────────────────────────────
 
@@ -127,8 +39,49 @@ function StatPill({ label, value }) {
 const App = () => {
     // ── View & project state ──────────────────────────────────────────────────
     const [currentView, setCurrentView] = useState('dashboard');
+    const [activeDocSection, setActiveDocSection] = useState('privacy');
+    const [docSearchQuery, setDocSearchQuery] = useState('');
     const [projects, setProjects] = useState([]);
     const [activeProjectId, setActiveProjectId] = useState(null);
+
+    // ── Routing & Navigation Helper ──────────────────────────────────────────
+    const navigateToView = (viewName, projectId = null) => {
+        if (viewName === 'guide') {
+            window.history.pushState(null, '', '/guide');
+            setCurrentView('guide');
+        } else if (viewName === 'dashboard') {
+            window.history.pushState(null, '', '/');
+            setCurrentView('dashboard');
+            setActiveProjectId(null);
+        } else if (viewName === 'editor') {
+            window.history.pushState(null, '', '/');
+            setCurrentView('editor');
+            if (projectId) setActiveProjectId(projectId);
+        }
+    };
+
+    // Listen to browser history navigation (back/forward buttons)
+    useEffect(() => {
+        const handleLocationChange = () => {
+            const path = window.location.pathname;
+            if (path === '/guide') {
+                setCurrentView('guide');
+            } else {
+                if (activeProjectId) {
+                    setCurrentView('editor');
+                } else {
+                    setCurrentView('dashboard');
+                }
+            }
+        };
+
+        handleLocationChange();
+
+        window.addEventListener('popstate', handleLocationChange);
+        return () => {
+            window.removeEventListener('popstate', handleLocationChange);
+        };
+    }, [activeProjectId]);
 
     // ── Editor state ──────────────────────────────────────────────────────────
     const [originalText, setOriginalText] = useState('');
@@ -139,9 +92,6 @@ const App = () => {
     const [scannedWords, setScannedWords] = useState(0);
     const [matchesFound, setMatchesFound] = useState(0);
     const [lastCopied, setLastCopied] = useState(null);
-    const [isProcessingFile, setIsProcessingFile] = useState(false);
-    const [processingError, setProcessingError] = useState('');
-    const [isDragging, setIsDragging] = useState(false);
     const [importedFileName, setImportedFileName] = useState('');
     const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -162,9 +112,13 @@ const App = () => {
     const [piiHasScanned, setPiiHasScanned] = useState(false);
     const [selectedText, setSelectedText] = useState('');
     const textareaRef = useRef(null);
+    const redactedTextScrollRef = useRef(null);
+    const downloadDropdownRef = useRef(null);
+    const [isDownloadOpen, setIsDownloadOpen] = useState(false);
 
     // ── Dashboard UI state ────────────────────────────────────────────────────
     const [searchQuery, setSearchQuery] = useState('');
+    const [sortBy, setSortBy] = useState('recent'); // 'recent' | 'alphabetical'
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [newProjectName, setNewProjectName] = useState('');
     const [isDashboardProcessingFile, setIsDashboardProcessingFile] = useState(false);
@@ -205,6 +159,62 @@ const App = () => {
     useEffect(() => {
         getAllProjects().then(setProjects).catch(console.error);
     }, []);
+
+    // ── Dropdown click outside listener ───────────────────────────────────────
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (downloadDropdownRef.current && !downloadDropdownRef.current.contains(e.target)) {
+                setIsDownloadOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    // ── Synchronize scrolling in side-by-side view ────────────────────────────
+    useEffect(() => {
+        if (layoutMode !== 'side-by-side') return;
+
+        const origEl = textareaRef.current;
+        const redEl = redactedTextScrollRef.current;
+        if (!origEl || !redEl) return;
+
+        let activeScrollSource = null;
+
+        const handleOrigScroll = () => {
+            if (activeScrollSource && activeScrollSource !== 'orig') return;
+            activeScrollSource = 'orig';
+            
+            const maxScrollOrig = origEl.scrollHeight - origEl.clientHeight;
+            if (maxScrollOrig > 0) {
+                const percentage = origEl.scrollTop / maxScrollOrig;
+                const maxScrollRed = redEl.scrollHeight - redEl.clientHeight;
+                redEl.scrollTop = percentage * maxScrollRed;
+            }
+            activeScrollSource = null;
+        };
+
+        const handleRedScroll = () => {
+            if (activeScrollSource && activeScrollSource !== 'red') return;
+            activeScrollSource = 'red';
+            
+            const maxScrollRed = redEl.scrollHeight - redEl.clientHeight;
+            if (maxScrollRed > 0) {
+                const percentage = redEl.scrollTop / maxScrollRed;
+                const maxScrollOrig = origEl.scrollHeight - origEl.clientHeight;
+                origEl.scrollTop = percentage * maxScrollOrig;
+            }
+            activeScrollSource = null;
+        };
+
+        origEl.addEventListener('scroll', handleOrigScroll, { passive: true });
+        redEl.addEventListener('scroll', handleRedScroll, { passive: true });
+
+        return () => {
+            origEl.removeEventListener('scroll', handleOrigScroll);
+            redEl.removeEventListener('scroll', handleRedScroll);
+        };
+    }, [layoutMode, editorMode, originalText, redactedText]);
 
     // ── Redaction engine ──────────────────────────────────────────────────────
     const performRedaction = useCallback(() => {
@@ -272,7 +282,7 @@ const App = () => {
                     }
 
                     let htmlSeqCount = 1;
-                    htmlText = htmlText.replace(re, (match) => {
+                    htmlText = htmlText.replace(re, () => {
                         const rep = replacement.replace('[SEQ]', htmlSeqCount).replace('{#}', htmlSeqCount);
                         htmlSeqCount++;
                         return `<span style="background: ${color}1a; border: 1px solid ${color}4d; color: ${color}; border-radius: 4px; padding: 1px 5px; font-weight: 600; font-family: ui-monospace, monospace; font-size: 0.75rem; white-space: nowrap;" title="Redacted by rule: ${pattern}">${rep}</span>`;
@@ -360,14 +370,14 @@ const App = () => {
         setSelectedText('');
         setEditorMode('edit');
         setHtmlRedactedText('');
-        setCurrentView('editor');
+        navigateToView('editor', proj.id);
     };
 
     const handleDeleteProject = async (id, e) => {
         e.stopPropagation();
         await deleteProject(id);
         setProjects(prev => prev.filter(p => p.id !== id));
-        if (activeProjectId === id) { setActiveProjectId(null); setCurrentView('dashboard'); }
+        if (activeProjectId === id) { navigateToView('dashboard'); }
     };
 
     const handleDashboardImportClick = () => {
@@ -391,6 +401,7 @@ const App = () => {
             }
             const projName = name || 'Imported Project';
 
+            const fileType = file.name.split('.').pop().toLowerCase();
             const proj = {
                 id: Date.now().toString(),
                 name: projName,
@@ -399,7 +410,9 @@ const App = () => {
                 isCaseSensitive: false,
                 isWholeWord: true,
                 createdAt: Date.now(),
-                updatedAt: Date.now()
+                updatedAt: Date.now(),
+                fileType,
+                fileName: file.name
             };
             await saveProject(proj);
             setProjects(prev => [proj, ...prev]);
@@ -623,7 +636,22 @@ const App = () => {
 
         if (pairs.length === 0) {
             return (
-                <div style={{ padding: '16px', fontSize: '0.875rem', lineHeight: 1.65, color: 'hsl(var(--foreground))', whiteSpace: 'pre-wrap', wordBreak: 'break-word', minHeight: '260px', maxHeight: '400px', overflowY: 'auto' }}>
+                <div
+                    ref={textareaRef}
+                    style={{
+                        padding: '16px',
+                        fontSize: '0.875rem',
+                        lineHeight: 1.65,
+                        color: 'hsl(var(--foreground))',
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-word',
+                        height: layoutMode === 'side-by-side' ? '500px' : 'auto',
+                        minHeight: layoutMode === 'side-by-side' ? '500px' : '260px',
+                        maxHeight: layoutMode === 'side-by-side' ? '500px' : '400px',
+                        overflowY: 'auto',
+                        boxSizing: 'border-box'
+                    }}
+                >
                     {originalText}
                 </div>
             );
@@ -651,6 +679,7 @@ const App = () => {
 
         return (
             <div
+                ref={textareaRef}
                 style={{
                     padding: '16px',
                     fontSize: '0.875rem',
@@ -658,9 +687,11 @@ const App = () => {
                     color: 'hsl(var(--foreground))',
                     whiteSpace: 'pre-wrap',
                     wordBreak: 'break-word',
-                    minHeight: '260px',
-                    maxHeight: '400px',
-                    overflowY: 'auto'
+                    height: layoutMode === 'side-by-side' ? '500px' : 'auto',
+                    minHeight: layoutMode === 'side-by-side' ? '500px' : '260px',
+                    maxHeight: layoutMode === 'side-by-side' ? '500px' : '400px',
+                    overflowY: 'auto',
+                    boxSizing: 'border-box'
                 }}
                 dangerouslySetInnerHTML={{ __html: safeText }}
             />
@@ -728,7 +759,7 @@ const App = () => {
                             text += content.items.map(it => it.str).join(' ') + '\n';
                         }
                         resolve(text);
-                    } catch (err) {
+                    } catch {
                         reject('Could not read the .pdf file.');
                     }
                 };
@@ -747,37 +778,31 @@ const App = () => {
         });
     };
 
-    /** Unified file dispatcher — routes by extension */
-    const processFile = (file) => {
-        if (!file) return;
-        setIsProcessingFile(true);
-        setProcessingError('');
-        setOriginalText('');
-        setImportedFileName(file.name);
-        extractTextFromFile(file)
-            .then(text => {
-                setOriginalText(text);
-            })
-            .catch(err => {
-                setProcessingError(err);
-            })
-            .finally(() => {
-                setIsProcessingFile(false);
-            });
+
+    const getSanitizedProjectName = () => {
+        const activeProject = projects.find(p => p.id === activeProjectId);
+        const name = activeProject?.name || 'Redacted';
+        return name.trim().replace(/[^a-zA-Z0-9_-]/g, '_').replace(/__+/g, '_');
     };
 
     const handleDownloadTxt = () => {
-        const blob = new Blob([redactedText], { type: 'text/plain' });
+        if (!redactedText || redactedText.trim() === '') {
+            alert('No redacted text to export.');
+            return;
+        }
+        const blob = new Blob([redactedText], { type: 'text/plain;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url; a.download = 'redacted-text.txt';
+        const filename = `${getSanitizedProjectName()}_Sanitised.txt`;
+        const a = document.createElement('a'); a.href = url; a.download = filename;
         document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
     };
 
     const handleDownloadKeyJson = () => {
         if (Object.keys(redactionMap).length === 0) { alert('No redactions performed yet.'); return; }
-        const blob = new Blob([JSON.stringify(redactionMap, null, 2)], { type: 'application/json' });
+        const blob = new Blob([JSON.stringify(redactionMap, null, 2)], { type: 'application/json;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url; a.download = 'redaction-key.json';
+        const filename = `${getSanitizedProjectName()}_Redaction_Key.json`;
+        const a = document.createElement('a'); a.href = url; a.download = filename;
         document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
     };
 
@@ -789,37 +814,273 @@ const App = () => {
             const escapedRep = rep.replace(/"/g, '""');
             csvContent += `"${escapedOrig}","${escapedRep}"\n`;
         });
-        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const BOM = '\uFEFF';
+        const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url; a.download = 'redaction-key.csv';
+        const filename = `${getSanitizedProjectName()}_Redaction_Key.csv`;
+        const a = document.createElement('a'); a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+    };
+
+    const handleDownloadDocx = () => {
+        if (!redactedText || redactedText.trim() === '') {
+            alert('No redacted text to export.');
+            return;
+        }
+        const activeProject = projects.find(p => p.id === activeProjectId);
+        const projTitle = activeProject?.name ? activeProject.name.toUpperCase() : 'DOCUMENT';
+        
+        // Build MS Word compatible styled HTML envelope
+        const htmlContent = `
+            <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+            <head>
+                <meta charset="utf-8">
+                <title>Sanitised Document</title>
+                <!--[if gte mso 9]>
+                <xml>
+                    <w:WordDocument>
+                        <w:View>Print</w:View>
+                        <w:Zoom>100</w:Zoom>
+                        <w:DoNotOptimizeForBrowser/>
+                    </w:WordDocument>
+                </xml>
+                <![endif]-->
+                <style>
+                    @page {
+                        size: 8.5in 11in;
+                        margin: 1.0in 1.0in 1.0in 1.0in;
+                        mso-header-margin: .5in;
+                        mso-footer-margin: .5in;
+                    }
+                    body {
+                        font-family: 'Arial', 'Helvetica', sans-serif;
+                        font-size: 11pt;
+                        line-height: 1.6;
+                        color: #1f2937;
+                    }
+                    .header-line {
+                        font-size: 8.5pt;
+                        color: #4b5563;
+                        border-bottom: 2px solid #0066f2;
+                        padding-bottom: 6px;
+                        margin-bottom: 24px;
+                        font-family: 'Arial', sans-serif;
+                    }
+                    .header-title {
+                        font-weight: bold;
+                        color: #111827;
+                    }
+                    .footer-line {
+                        font-size: 8.5pt;
+                        color: #9ca3af;
+                        border-top: 1px solid #e5e7eb;
+                        padding-top: 8px;
+                        margin-top: 48px;
+                        font-family: 'Arial', sans-serif;
+                    }
+                    p {
+                        margin-top: 0px;
+                        margin-bottom: 12px;
+                        text-align: justify;
+                        word-wrap: break-word;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="header-line">
+                    <span class="header-title">REDACTA</span> &nbsp;&bull;&nbsp; SANITISED DOCUMENT &nbsp;&bull;&nbsp; ${projTitle}
+                </div>
+                
+                ${redactedText.split('\n').map(para => {
+                    const trimmed = para.replace(/\r/g, '');
+                    return `<p>${trimmed || '&nbsp;'}</p>`;
+                }).join('')}
+                
+                <div class="footer-line">
+                    Confidential &nbsp;&bull;&nbsp; Processed locally by Redacta Client
+                </div>
+            </body>
+            </html>
+        `;
+        
+        const blob = new Blob(['\ufeff' + htmlContent], { type: 'application/msword;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const filename = `${getSanitizedProjectName()}_Sanitised.doc`;
+        const a = document.createElement('a'); a.href = url; a.download = filename;
         document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
     };
 
     const handleDownloadPdf = () => {
         if (!window.jspdf) { alert('PDF library not loaded yet.'); return; }
+        if (!redactedText || redactedText.trim() === '') {
+            alert('No redacted text to export.');
+            return;
+        }
         setIsGeneratingPdf(true);
         try {
             const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF();
-            pdf.text(pdf.splitTextToSize(redactedText, 180), 10, 10);
-            pdf.save('redacted-document.pdf');
-        } catch { alert('Error generating PDF.'); }
-        finally { setIsGeneratingPdf(false); }
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4'
+            });
+
+            // Set default font
+            pdf.setFont('Helvetica', 'normal');
+            
+            // Split paragraphs to preserve structure
+            const paragraphs = redactedText.split('\n');
+            const leftMargin = 20;
+            const rightMargin = 20;
+            const topMargin = 25; // below the top header
+            const bottomMargin = 20; // above the bottom footer
+            const printableWidth = 210 - leftMargin - rightMargin; // 170mm
+            const pageHeight = 297;
+            const maxY = pageHeight - bottomMargin; // 277mm
+            const lineHeight = 6.2; // spacing between text lines
+            const paragraphSpacing = 3.5; // spacing between paragraphs
+            
+            pdf.setFontSize(10.5);
+            pdf.setTextColor(31, 41, 55); // #1f2937 - charcoal gray
+
+            let yPosition = topMargin;
+
+            paragraphs.forEach((para) => {
+                const cleanPara = para.replace(/\r/g, '');
+                // Handle empty lines (paragraph break)
+                if (cleanPara.trim() === '') {
+                    yPosition += paragraphSpacing;
+                    return;
+                }
+
+                // Split paragraph into wrapped lines
+                const lines = pdf.splitTextToSize(cleanPara, printableWidth);
+                
+                lines.forEach((line) => {
+                    // Check if we need a page break
+                    if (yPosition + lineHeight > maxY) {
+                        pdf.addPage();
+                        yPosition = topMargin;
+                    }
+                    pdf.text(line, leftMargin, yPosition);
+                    yPosition += lineHeight;
+                });
+                
+                // Add a small paragraph spacing
+                yPosition += paragraphSpacing - lineHeight; // compensate for last line's increment
+                if (yPosition < topMargin) {
+                    yPosition = topMargin; // keep boundary
+                }
+            });
+
+            // Second pass: Draw brand headers, footers, pagination
+            const totalPages = pdf.internal.getNumberOfPages();
+            const activeProject = projects.find(p => p.id === activeProjectId);
+            const projTitle = activeProject?.name ? activeProject.name.toUpperCase() : 'DOCUMENT';
+
+            for (let i = 1; i <= totalPages; i++) {
+                pdf.setPage(i);
+                
+                // Header accent line (Brand Accent blue: rgb(0, 102, 242))
+                pdf.setDrawColor(0, 102, 242);
+                pdf.setLineWidth(0.6);
+                pdf.line(20, 14, 190, 14);
+                
+                // Header texts
+                pdf.setFont('Helvetica', 'bold');
+                pdf.setFontSize(8.5);
+                pdf.setTextColor(17, 24, 39); // #111827
+                pdf.text('REDACTA', 20, 10.5);
+                
+                pdf.setFont('Helvetica', 'normal');
+                pdf.setTextColor(107, 114, 128); // #6b7280
+                pdf.text('•  SANITIZED DOCUMENT', 38, 10.5);
+                
+                pdf.setFontSize(8.5);
+                pdf.text(projTitle, 190, 10.5, { align: 'right' });
+                
+                // Footer accent line (Muted border: rgb(229, 231, 235))
+                pdf.setDrawColor(229, 231, 235);
+                pdf.setLineWidth(0.2);
+                pdf.line(20, 281, 190, 281);
+                
+                // Footer text
+                pdf.setFontSize(8);
+                pdf.setTextColor(156, 163, 175); // #9ca3af
+                pdf.text('Confidential  |  Processed locally by Redacta Client', 20, 286.5);
+                pdf.text(`Page ${i} of ${totalPages}`, 190, 286.5, { align: 'right' });
+            }
+
+            const filename = `${getSanitizedProjectName()}_Sanitised.pdf`;
+            pdf.save(filename);
+        } catch (e) {
+            console.error('Error generating PDF:', e);
+            alert('Error generating PDF.');
+        } finally {
+            setIsGeneratingPdf(false);
+        }
     };
 
     const handleCopy = (text, type) => {
+        if (!text) return;
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text)
+                .then(() => {
+                    setLastCopied(type);
+                    setTimeout(() => setLastCopied(null), 2000);
+                })
+                .catch(err => {
+                    console.error('Async clipboard copy failed, falling back:', err);
+                    fallbackCopy(text, type);
+                });
+        } else {
+            fallbackCopy(text, type);
+        }
+    };
+
+    const fallbackCopy = (text, type) => {
         const ta = document.createElement('textarea');
-        ta.value = text; document.body.appendChild(ta); ta.select();
-        try { document.execCommand('copy'); setLastCopied(type); setTimeout(() => setLastCopied(null), 2000); }
-        catch (e) { console.error(e); }
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.top = '0';
+        ta.style.left = '0';
+        ta.style.width = '2em';
+        ta.style.height = '2em';
+        ta.style.padding = '0';
+        ta.style.border = 'none';
+        ta.style.outline = 'none';
+        ta.style.boxShadow = 'none';
+        ta.style.background = 'transparent';
+        document.body.appendChild(ta);
+        ta.select();
+        try {
+            const successful = document.execCommand('copy');
+            if (successful) {
+                setLastCopied(type);
+                setTimeout(() => setLastCopied(null), 2000);
+            }
+        } catch (err) {
+            console.error('Fallback copy failed:', err);
+        }
         document.body.removeChild(ta);
     };
 
-    // ── Filtered projects ─────────────────────────────────────────────────────
-    const filtered = projects.filter(p =>
-        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.originalText.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    // ── Filtered & Sorted projects ────────────────────────────────────────────
+    const getSortedProjects = () => {
+        const sorted = projects.filter(p =>
+            p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            p.originalText.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+        
+        if (sortBy === 'recent') {
+            sorted.sort((a, b) => b.updatedAt - a.updatedAt);
+        } else if (sortBy === 'alphabetical') {
+            sorted.sort((a, b) => a.name.localeCompare(b.name));
+        }
+        return sorted;
+    };
+
+    const filtered = getSortedProjects();
 
     const activeProject = projects.find(p => p.id === activeProjectId);
 
@@ -865,8 +1126,31 @@ const App = () => {
                 )}
                 <main style={{ margin: '0 auto', maxWidth: '720px', padding: '64px 24px', display: 'flex', flexDirection: 'column', minHeight: '100dvh' }} className="animate-in">
 
-                    {/* Theme toggle — top right */}
-                    <div style={{ position: 'absolute', top: '24px', right: '24px' }}>
+                    {/* Top right actions */}
+                    <div style={{ position: 'absolute', top: '24px', right: '24px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <button
+                            onClick={() => navigateToView('guide')}
+                            aria-label="User Guide"
+                            style={{
+                                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                padding: '6px 12px', border: '1px solid hsl(var(--border))',
+                                borderRadius: '6px', background: 'transparent', cursor: 'pointer',
+                                fontSize: '0.8125rem', fontWeight: 600, color: 'hsl(var(--muted-foreground))',
+                                transition: 'background 0.15s, color 0.15s'
+                            }}
+                            onMouseEnter={e => {
+                                e.currentTarget.style.background = 'hsl(var(--muted) / 0.5)';
+                                e.currentTarget.style.color = 'hsl(var(--foreground))';
+                            }}
+                            onMouseLeave={e => {
+                                e.currentTarget.style.background = 'transparent';
+                                e.currentTarget.style.color = 'hsl(var(--muted-foreground))';
+                            }}
+                            title="Documentation"
+                        >
+                            <HelpCircle size={15} style={{ color: 'hsl(var(--accent))' }} />
+                            <span>User Guide</span>
+                        </button>
                         <button
                             id="theme-toggle"
                             onClick={toggleTheme}
@@ -938,25 +1222,47 @@ const App = () => {
                             </span>
                         </div>
 
-                        {/* Search */}
-                        <div style={{ position: 'relative', marginBottom: '20px' }}>
-                            <Search size={15} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'hsl(var(--muted-foreground))', pointerEvents: 'none' }} />
-                            <input
-                                id="project-search"
-                                type="text"
-                                placeholder="Search projects..."
-                                value={searchQuery}
-                                onChange={e => setSearchQuery(e.target.value)}
-                                style={{
-                                    width: '100%', boxSizing: 'border-box',
-                                    background: 'hsl(var(--muted) / 0.4)', border: '1px solid hsl(var(--border))',
-                                    borderRadius: '8px', padding: '8px 12px 8px 36px',
-                                    fontSize: '0.875rem', color: 'hsl(var(--foreground))',
-                                    outline: 'none', transition: 'border-color 0.15s'
-                                }}
-                                onFocus={e => e.target.style.borderColor = 'hsl(var(--accent))'}
-                                onBlur={e => e.target.style.borderColor = 'hsl(var(--border))'}
-                            />
+                        {/* Search & Sort */}
+                        <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap', alignItems: 'center' }}>
+                            <div style={{ position: 'relative', flex: 1, minWidth: '240px' }}>
+                                <Search size={15} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'hsl(var(--muted-foreground))', pointerEvents: 'none' }} />
+                                <input
+                                    id="project-search"
+                                    type="text"
+                                    placeholder="Search projects..."
+                                    value={searchQuery}
+                                    onChange={e => setSearchQuery(e.target.value)}
+                                    style={{
+                                        width: '100%', boxSizing: 'border-box',
+                                        background: 'hsl(var(--muted) / 0.4)', border: '1px solid hsl(var(--border))',
+                                        borderRadius: '8px', padding: '8px 12px 8px 36px',
+                                        fontSize: '0.875rem', color: 'hsl(var(--foreground))',
+                                        outline: 'none', transition: 'border-color 0.15s'
+                                    }}
+                                    onFocus={e => e.target.style.borderColor = 'hsl(var(--accent))'}
+                                    onBlur={e => e.target.style.borderColor = 'hsl(var(--border))'}
+                                />
+                            </div>
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
+                                <span style={{ fontSize: '0.8125rem', color: 'hsl(var(--muted-foreground))', fontWeight: 500 }}>Sort:</span>
+                                <select
+                                    value={sortBy}
+                                    onChange={e => setSortBy(e.target.value)}
+                                    style={{
+                                        background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))',
+                                        borderRadius: '8px', padding: '8px 12px',
+                                        fontSize: '0.8125rem', color: 'hsl(var(--foreground))',
+                                        outline: 'none', cursor: 'pointer',
+                                        transition: 'border-color 0.15s',
+                                        colorScheme: 'dark light'
+                                    }}
+                                    onFocus={e => e.target.style.borderColor = 'hsl(var(--accent))'}
+                                    onBlur={e => e.target.style.borderColor = 'hsl(var(--border))'}
+                                >
+                                    <option value="recent">Recently updated</option>
+                                    <option value="alphabetical">A-Z</option>
+                                </select>
+                            </div>
                         </div>
 
                         {/* List / empty state */}
@@ -1083,6 +1389,22 @@ const App = () => {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
+    // ── GUIDE VIEW ────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────────────
+    if (currentView === 'guide') {
+        return (
+            <GuideView
+                activeDocSection={activeDocSection}
+                setActiveDocSection={setActiveDocSection}
+                docSearchQuery={docSearchQuery}
+                setDocSearchQuery={setDocSearchQuery}
+                navigateToView={navigateToView}
+            />
+        );
+    }
+
+
+    // ─────────────────────────────────────────────────────────────────────────
     // ── EDITOR VIEW ───────────────────────────────────────────────────────────
     // ─────────────────────────────────────────────────────────────────────────
     return (
@@ -1095,7 +1417,7 @@ const App = () => {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
                         <button
                             id="back-to-projects"
-                            onClick={() => setCurrentView('dashboard')}
+                            onClick={() => navigateToView('dashboard')}
                             style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'none', border: 'none', color: 'hsl(var(--muted-foreground))', fontSize: '0.875rem', cursor: 'pointer', padding: '4px 0', transition: 'color 0.15s', flexShrink: 0 }}
                             onMouseEnter={e => e.currentTarget.style.color = 'hsl(var(--foreground))'}
                             onMouseLeave={e => e.currentTarget.style.color = 'hsl(var(--muted-foreground))'}
@@ -1584,19 +1906,18 @@ const App = () => {
                                     onKeyUp={handleTextareaSelection}
                                     placeholder="Type or paste your content here..."
                                     style={{
-                                        width: '100%', boxSizing: 'border-box', minHeight: '260px',
+                                        width: '100%', boxSizing: 'border-box',
+                                        height: layoutMode === 'side-by-side' ? '500px' : 'auto',
+                                        minHeight: layoutMode === 'side-by-side' ? '500px' : '260px',
+                                        maxHeight: layoutMode === 'side-by-side' ? '500px' : 'none',
                                         background: 'transparent', border: 'none', outline: 'none',
-                                        padding: '16px', resize: 'vertical', fontSize: '0.875rem',
+                                        padding: '16px', resize: layoutMode === 'side-by-side' ? 'none' : 'vertical', fontSize: '0.875rem',
                                         lineHeight: 1.65, color: 'hsl(var(--foreground))',
                                         fontFamily: 'inherit', borderRadius: '0 0 10px 10px',
-                                        position: 'relative', zIndex: 1
+                                        position: 'relative', zIndex: 1, overflowY: 'auto'
                                     }}
                                 />
-                        {processingError && (
-                            <p style={{ padding: '0 16px 12px', fontSize: '0.75rem', color: 'hsl(var(--destructive))', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                ⚠ {processingError}
-                            </p>
-                        )}
+
                         {selectedText && (
                             <div
                                 className="animate-scale-in"
@@ -1690,38 +2011,156 @@ const App = () => {
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: '1px solid hsl(var(--border))', flexWrap: 'wrap', gap: '8px' }}>
                             <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>Sanitised output</span>
                             <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-                                {[
-                                    { label: 'Copy', onClick: () => handleCopy(redactedText, 'redacted'), active: lastCopied === 'redacted', variant: 'outline' },
-                                    { label: 'Export JSON Key', onClick: handleDownloadKeyJson, variant: 'outline', disabled: Object.keys(redactionMap).length === 0 },
-                                    { label: 'Export CSV Key', onClick: handleDownloadKeyCsv, variant: 'outline', disabled: Object.keys(redactionMap).length === 0 },
-                                    { label: '.txt', onClick: handleDownloadTxt, icon: <Download size={12} />, variant: 'outline' },
-                                    { label: 'Download PDF', onClick: handleDownloadPdf, icon: <FileDown size={12} />, variant: 'primary', disabled: isGeneratingPdf },
-                                ].map(({ label, onClick, icon, active, variant, disabled }) => (
+                                {/* Copy Button */}
+                                <button
+                                    onClick={() => handleCopy(redactedText, 'redacted')}
+                                    style={{
+                                        display: 'inline-flex', alignItems: 'center', gap: '5px',
+                                        padding: '5px 10px', border: '1px solid hsl(var(--border))',
+                                        borderRadius: '6px', fontSize: '0.8125rem', fontWeight: 500,
+                                        cursor: 'pointer', transition: 'all 0.15s',
+                                        background: lastCopied === 'redacted' ? 'hsl(var(--background))' : 'hsl(var(--background))',
+                                        color: lastCopied === 'redacted' ? 'hsl(var(--accent))' : 'hsl(var(--muted-foreground))',
+                                        borderColor: lastCopied === 'redacted' ? 'hsl(var(--accent) / 0.4)' : 'hsl(var(--border))'
+                                    }}
+                                    onMouseEnter={e => e.currentTarget.style.background = 'hsl(var(--muted))'}
+                                    onMouseLeave={e => e.currentTarget.style.background = 'hsl(var(--background))'}
+                                >
+                                    {lastCopied === 'redacted' ? <Check size={12} /> : null}
+                                    {lastCopied === 'redacted' ? 'Copied!' : 'Copy'}
+                                </button>
+
+                                {/* Unified Download Dropdown */}
+                                <div ref={downloadDropdownRef} style={{ position: 'relative', display: 'inline-block' }}>
                                     <button
-                                        key={label}
-                                        onClick={onClick}
-                                        disabled={disabled}
+                                        onClick={() => setIsDownloadOpen(!isDownloadOpen)}
                                         style={{
                                             display: 'inline-flex', alignItems: 'center', gap: '5px',
-                                            padding: '5px 10px', border: '1px solid hsl(var(--border))',
-                                            borderRadius: '6px', fontSize: '0.8125rem', fontWeight: 500,
-                                            cursor: disabled ? 'not-allowed' : 'pointer', transition: 'all 0.15s',
-                                            background: variant === 'primary' ? 'hsl(var(--primary))' : 'hsl(var(--background))',
-                                            color: variant === 'primary' ? 'hsl(var(--primary-foreground))' : active ? 'hsl(var(--accent))' : 'hsl(var(--muted-foreground))',
-                                            borderColor: variant === 'primary' ? 'transparent' : active ? 'hsl(var(--accent) / 0.4)' : 'hsl(var(--border))',
-                                            opacity: disabled ? 0.5 : 1
+                                            padding: '5px 12px', border: '1px solid hsl(var(--border))',
+                                            borderRadius: '6px', fontSize: '0.8125rem', fontWeight: 600,
+                                            cursor: 'pointer', transition: 'all 0.15s',
+                                            background: 'hsl(var(--primary))',
+                                            color: 'hsl(var(--primary-foreground))',
+                                            borderColor: 'transparent'
                                         }}
-                                        onMouseEnter={e => { if (!disabled) e.currentTarget.style.background = variant === 'primary' ? 'hsl(var(--primary) / 0.85)' : 'hsl(var(--muted))'; }}
-                                        onMouseLeave={e => { e.currentTarget.style.background = variant === 'primary' ? 'hsl(var(--primary))' : 'hsl(var(--background))'; }}
+                                        onMouseEnter={e => e.currentTarget.style.background = 'hsl(var(--primary) / 0.85)'}
+                                        onMouseLeave={e => e.currentTarget.style.background = 'hsl(var(--primary))'}
                                     >
-                                        {icon}{label}
+                                        <Download size={12} />
+                                        <span>Download</span>
+                                        <ChevronDown size={12} style={{ opacity: 0.8, transform: isDownloadOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
                                     </button>
-                                ))}
+                                    
+                                    {isDownloadOpen && (
+                                        <div
+                                            className="animate-scale-in"
+                                            style={{
+                                                position: 'absolute', right: 0, marginTop: '6px',
+                                                width: '200px', background: 'hsl(var(--card))',
+                                                border: '1px solid hsl(var(--border))', borderRadius: '8px',
+                                                boxShadow: '0 10px 30px hsl(0 0% 0% / 0.1)', zIndex: 30,
+                                                padding: '6px 0', boxSizing: 'border-box'
+                                            }}
+                                        >
+                                            <div style={{ padding: '6px 12px 4px 12px', fontSize: '0.6875rem', fontWeight: 700, color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                                Documents
+                                            </div>
+                                            <button
+                                                onClick={() => { handleDownloadTxt(); setIsDownloadOpen(false); }}
+                                                style={{
+                                                    display: 'flex', alignItems: 'center', gap: '8px', width: '100%',
+                                                    padding: '8px 12px', background: 'transparent', border: 'none',
+                                                    fontSize: '0.8125rem', color: 'hsl(var(--foreground))', textAlign: 'left',
+                                                    cursor: 'pointer', boxSizing: 'border-box', transition: 'background 0.15s'
+                                                }}
+                                                onMouseEnter={e => e.currentTarget.style.background = 'hsl(var(--muted))'}
+                                                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                                            >
+                                                <FileText size={13} style={{ color: 'hsl(var(--muted-foreground))' }} />
+                                                <span>Plain Text (.txt)</span>
+                                            </button>
+                                            <button
+                                                onClick={() => { handleDownloadDocx(); setIsDownloadOpen(false); }}
+                                                style={{
+                                                    display: 'flex', alignItems: 'center', gap: '8px', width: '100%',
+                                                    padding: '8px 12px', background: 'transparent', border: 'none',
+                                                    fontSize: '0.8125rem', color: 'hsl(var(--foreground))', textAlign: 'left',
+                                                    cursor: 'pointer', boxSizing: 'border-box', transition: 'background 0.15s'
+                                                }}
+                                                onMouseEnter={e => e.currentTarget.style.background = 'hsl(var(--muted))'}
+                                                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                                            >
+                                                <FileText size={13} style={{ color: 'hsl(var(--muted-foreground))' }} />
+                                                <span>Word Document (.docx)</span>
+                                            </button>
+                                            <button
+                                                onClick={() => { handleDownloadPdf(); setIsDownloadOpen(false); }}
+                                                style={{
+                                                    display: 'flex', alignItems: 'center', gap: '8px', width: '100%',
+                                                    padding: '8px 12px', background: 'transparent', border: 'none',
+                                                    fontSize: '0.8125rem', color: 'hsl(var(--foreground))', textAlign: 'left',
+                                                    cursor: 'pointer', boxSizing: 'border-box', transition: 'background 0.15s'
+                                                }}
+                                                onMouseEnter={e => e.currentTarget.style.background = 'hsl(var(--muted))'}
+                                                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                                            >
+                                                <FileDown size={13} style={{ color: 'hsl(var(--muted-foreground))' }} />
+                                                <span>PDF Document (.pdf)</span>
+                                            </button>
+                                            
+                                            <div style={{ height: '1px', background: 'hsl(var(--border))', margin: '6px 0' }}></div>
+                                            
+                                            <div style={{ padding: '6px 12px 4px 12px', fontSize: '0.6875rem', fontWeight: 700, color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                                Compliance Keys
+                                            </div>
+                                            <button
+                                                onClick={() => { handleDownloadKeyJson(); setIsDownloadOpen(false); }}
+                                                disabled={Object.keys(redactionMap).length === 0}
+                                                style={{
+                                                    display: 'flex', alignItems: 'center', gap: '8px', width: '100%',
+                                                    padding: '8px 12px', background: 'transparent', border: 'none',
+                                                    fontSize: '0.8125rem', color: 'hsl(var(--foreground))', textAlign: 'left',
+                                                    cursor: Object.keys(redactionMap).length === 0 ? 'not-allowed' : 'pointer', boxSizing: 'border-box', transition: 'background 0.15s',
+                                                    opacity: Object.keys(redactionMap).length === 0 ? 0.5 : 1
+                                                }}
+                                                onMouseEnter={e => { if (Object.keys(redactionMap).length > 0) e.currentTarget.style.background = 'hsl(var(--muted))'; }}
+                                                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                                            >
+                                                <FileCode size={13} style={{ color: 'hsl(var(--muted-foreground))' }} />
+                                                <span>JSON Key Map</span>
+                                            </button>
+                                            <button
+                                                onClick={() => { handleDownloadKeyCsv(); setIsDownloadOpen(false); }}
+                                                disabled={Object.keys(redactionMap).length === 0}
+                                                style={{
+                                                    display: 'flex', alignItems: 'center', gap: '8px', width: '100%',
+                                                    padding: '8px 12px', background: 'transparent', border: 'none',
+                                                    fontSize: '0.8125rem', color: 'hsl(var(--foreground))', textAlign: 'left',
+                                                    cursor: Object.keys(redactionMap).length === 0 ? 'not-allowed' : 'pointer', boxSizing: 'border-box', transition: 'background 0.15s',
+                                                    opacity: Object.keys(redactionMap).length === 0 ? 0.5 : 1
+                                                }}
+                                                onMouseEnter={e => { if (Object.keys(redactionMap).length > 0) e.currentTarget.style.background = 'hsl(var(--muted))'; }}
+                                                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                                            >
+                                                <FileText size={13} style={{ color: 'hsl(var(--muted-foreground))' }} />
+                                                <span>CSV Key Spreadsheet</span>
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                         <div
+                            ref={redactedTextScrollRef}
                             id="redacted-output-content"
-                            style={{ minHeight: '260px', padding: '16px', fontSize: '0.875rem', lineHeight: 1.65, whiteSpace: 'pre-wrap', wordBreak: 'break-word', overflowY: 'auto', color: 'hsl(var(--foreground))' }}
+                            style={{
+                                height: layoutMode === 'side-by-side' ? '500px' : 'auto',
+                                minHeight: layoutMode === 'side-by-side' ? '500px' : '260px',
+                                maxHeight: layoutMode === 'side-by-side' ? '500px' : 'none',
+                                padding: '16px', fontSize: '0.875rem', lineHeight: 1.65,
+                                whiteSpace: 'pre-wrap', wordBreak: 'break-word', overflowY: 'auto',
+                                color: 'hsl(var(--foreground))', boxSizing: 'border-box'
+                            }}
                             dangerouslySetInnerHTML={{ __html: htmlRedactedText }}
                         />
                     </div>
