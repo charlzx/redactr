@@ -159,6 +159,7 @@ const App = () => {
     const [piiSuggestions, setPiiSuggestions] = useState([]);
     const [isScannerOpen, setIsScannerOpen] = useState(false);
     const [isScanning, setIsScanning] = useState(false);
+    const [piiHasScanned, setPiiHasScanned] = useState(false);
     const [selectedText, setSelectedText] = useState('');
     const textareaRef = useRef(null);
 
@@ -355,6 +356,7 @@ const App = () => {
         setPiiSuggestions([]);
         setIsScannerOpen(false);
         setIsScanning(false);
+        setPiiHasScanned(false);
         setSelectedText('');
         setEditorMode('edit');
         setHtmlRedactedText('');
@@ -498,6 +500,7 @@ const App = () => {
             setPiiSuggestions(suggestions);
             setIsScanning(false);
             setIsScannerOpen(true);
+            setPiiHasScanned(true);
         }, 400);
     };
 
@@ -1437,9 +1440,19 @@ const App = () => {
                                             </span>
                                         )}
                                         {originalText && piiSuggestions.length === 0 && !isScanning && (
-                                            <span style={{ fontSize: '0.6875rem', color: 'hsl(var(--muted-foreground))', fontStyle: 'italic', textAlign: 'center' }}>
-                                                Scan to auto-detect emails, phones, credit cards.
-                                            </span>
+                                            piiHasScanned ? (
+                                                <div style={{
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
+                                                    background: 'hsl(142 71% 45% / 0.08)', border: '1px solid hsl(142 71% 45% / 0.2)',
+                                                    borderRadius: '6px', padding: '8px 10px', color: 'hsl(142 71% 45%)', fontSize: '0.725rem', fontWeight: 600
+                                                }}>
+                                                    <span>✔ Scan complete. No sensitive patterns found!</span>
+                                                </div>
+                                            ) : (
+                                                <span style={{ fontSize: '0.6875rem', color: 'hsl(var(--muted-foreground))', fontStyle: 'italic', textAlign: 'center' }}>
+                                                    Scan to auto-detect emails, phones, credit cards.
+                                                </span>
+                                            )
                                         )}
                                     </div>
                                 ))}
@@ -1449,6 +1462,7 @@ const App = () => {
                                     <div style={{ display: 'flex', gap: '8px', paddingTop: '4px' }}>
                                         <button
                                             onClick={() => setIsCaseSensitive(v => !v)}
+                                            title="Case Sensitive (Match exact casing of characters)"
                                             style={{
                                                 flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
                                                 padding: '8px 10px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 600,
@@ -1459,10 +1473,11 @@ const App = () => {
                                             }}
                                         >
                                             <CaseSensitive size={13} />
-                                            Aa
+                                            Match Case
                                         </button>
                                         <button
                                             onClick={() => setIsWholeWord(v => !v)}
+                                            title="Whole Words Only (Avoid redacting parts of larger words)"
                                             style={{
                                                 flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
                                                 padding: '8px 10px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 600,
@@ -1473,7 +1488,7 @@ const App = () => {
                                             }}
                                         >
                                             <WholeWord size={13} />
-                                            [W]
+                                            Whole Words
                                         </button>
                                     </div>
                                 ))}
@@ -1564,7 +1579,7 @@ const App = () => {
                                 <textarea
                                     ref={textareaRef}
                                     value={originalText}
-                                    onChange={e => { setOriginalText(e.target.value); if (!e.target.value) setImportedFileName(''); }}
+                                    onChange={e => { setOriginalText(e.target.value); setPiiHasScanned(false); if (!e.target.value) setImportedFileName(''); }}
                                     onMouseUp={handleTextareaSelection}
                                     onKeyUp={handleTextareaSelection}
                                     placeholder="Type or paste your content here..."
