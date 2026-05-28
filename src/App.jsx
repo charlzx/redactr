@@ -349,9 +349,9 @@ const App = () => {
                             id="theme-toggle"
                             onClick={toggleTheme}
                             aria-label="Toggle theme"
-                            style={{ position: 'relative', padding: '8px', borderRadius: '8px', border: '1px solid hsl(var(--border))', background: 'hsl(var(--muted) / 0.4)', cursor: 'pointer', color: 'hsl(var(--muted-foreground))', transition: 'background 0.15s, color 0.15s', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                            onMouseEnter={e => e.currentTarget.style.background = 'hsl(var(--muted))'}
-                            onMouseLeave={e => e.currentTarget.style.background = 'hsl(var(--muted) / 0.4)'}
+                            style={{ position: 'relative', padding: '8px', borderRadius: '8px', border: 'none', background: 'transparent', cursor: 'pointer', color: 'hsl(var(--muted-foreground))', transition: 'background 0.15s, color 0.15s', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                            onMouseEnter={e => e.currentTarget.style.background = 'hsl(var(--muted) / 0.5)'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                         >
                             {isDark
                                 ? <Sun size={16} style={{ transition: 'transform 0.2s' }} />
@@ -555,9 +555,9 @@ const App = () => {
                         id="theme-toggle-editor"
                         onClick={toggleTheme}
                         aria-label="Toggle theme"
-                        style={{ position: 'relative', padding: '6px', borderRadius: '8px', border: '1px solid hsl(var(--border))', background: 'hsl(var(--muted) / 0.4)', cursor: 'pointer', color: 'hsl(var(--muted-foreground))', transition: 'background 0.15s', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                        onMouseEnter={e => e.currentTarget.style.background = 'hsl(var(--muted))'}
-                        onMouseLeave={e => e.currentTarget.style.background = 'hsl(var(--muted) / 0.4)'}
+                        style={{ position: 'relative', padding: '6px', borderRadius: '8px', border: 'none', background: 'transparent', cursor: 'pointer', color: 'hsl(var(--muted-foreground))', transition: 'background 0.15s', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'hsl(var(--muted) / 0.5)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                     >
                         {isDark
                             ? <Sun size={15} />
