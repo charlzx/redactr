@@ -1,33 +1,34 @@
-# redacta
+# Redacta
 
-A modern, client-side text redaction tool for sanitising sensitive information from plain text, Word documents, and PDFs. Features a project dashboard with local persistence, real-time regex-powered redaction, and direct export — all running in your browser with zero data sent to any server.
+A modern, offline-first compliance text redaction workspace. Features a project dashboard with local IndexedDB persistence, real-time regex-powered matching, visual preview highlights, and client-side multi-format exports.
+
+All operations and text extractions run **100% locally in your browser** — zero data is ever sent to any external server.
 
 **Live Demo:** [redacta.charlz.dev](https://redacta.charlz.dev)
 
 ---
 
-## Features
+## Key Features
 
-- **Project dashboard** — Create, search, and manage multiple redaction projects. Each project auto-saves as you type, stored in IndexedDB — nothing is ever sent to a server.
-- **Real-time redaction engine** — Comma-separated `pattern:replacement` rules applied live as you type. Supports whole-word matching and case-sensitivity toggles.
-- **Multi-format file import** — Upload `.txt`, `.csv`, `.docx`, and `.pdf` files. DOCX text extraction uses Mammoth.js; PDF parsing uses PDF.js — both run fully client-side.
-- **Export options** — Download the sanitised output as a `.txt` file or generate a formatted `.pdf` directly in the browser using jsPDF.
-- **IndexedDB persistence** — Projects are stored in IndexedDB rather than `localStorage`, removing the 5 MB limit and safely handling large document extractions.
-- **Debounced autosave** — Changes are committed to the database 500 ms after you stop typing; the header shows a live "Saved locally" status.
-- **Sequential default naming** — New untitled projects automatically receive names like `Untitled Project #1`, `Untitled Project #2`, etc.
+- **Project Dashboard & Sorting:** Search and organize multiple projects locally with responsive sorting (Recently Updated, A-Z).
+- **Real-Time Redaction Engine:** Define case-sensitive, whole-word, or regular expression matching patterns. Supports smart sequential placeholders (e.g. `[EMAIL_[SEQ]]`).
+- **PII Auto-Scanner:** Locally scans and identifies sensitive metadata patterns: Emails, Phone Numbers, Credit Cards, and SSNs.
+- **Original Match Previews:** Real-time visual underlines with interactive hover tooltips highlighting matched rules.
+- **Scroll-Synchronized Workspace:** Side-by-side or stacked grid layouts with percentage-synchronized scroll bars.
+- **Unified Document Exporters:**
+  - **PDF Document:** Multi-page A4 layout compiler with dynamic watermark headers and footers (`Page X of Y`).
+  - **Word Document:** XML-compliant pre-formatted `.docx` template exports.
+  - **Compliance Keys:** Download original-to-replacement audit mapping logs as UTF-8 CSV or JSON.
 
 ---
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Framework | React 19 |
-| Build tool | Vite 7 |
-| Styling | Tailwind CSS 4 + CSS custom properties (Vercel design tokens) |
-| Icons | Lucide React |
-| Storage | Native IndexedDB (promise-based wrapper) |
-| Doc parsing | Mammoth.js (DOCX), PDF.js (PDF), jsPDF (export) |
+- **Framework:** React 19 + Vite 7
+- **Styling:** CSS variables (Vercel HSL design tokens)
+- **Icons:** Lucide React
+- **Storage:** Native IndexedDB
+- **Parsers & Engines:** Mammoth.js (DOCX extraction), PDF.js (PDF extraction), jsPDF (PDF export)
 
 ---
 
@@ -38,7 +39,7 @@ A modern, client-side text redaction tool for sanitising sensitive information f
 - Node.js >= 18
 - pnpm (recommended)
 
-### Installation
+### Setup
 
 ```bash
 # Clone the repository
@@ -47,85 +48,13 @@ cd redactr
 
 # Install dependencies
 pnpm install
-```
 
-### Development
-
-```bash
+# Start local dev server
 pnpm dev
-```
 
-Opens the app at `http://localhost:5173` with hot module replacement.
-
-### Build
-
-```bash
+# Build production assets
 pnpm build
 ```
-
-Compiles and bundles to `dist/`.
-
-### Preview production build
-
-```bash
-pnpm preview
-```
-
-### Lint
-
-```bash
-pnpm lint
-```
-
----
-
-## Project Structure
-
-```
-redactr/
-├── src/
-│   ├── App.jsx          # Dashboard, editor views and all application logic
-│   ├── db.js            # Native IndexedDB promise wrapper (CRUD for projects)
-│   ├── index.css        # Tailwind + Vercel-style CSS custom property tokens
-│   └── main.jsx         # React entry point
-├── public/              # Static assets
-├── index.html           # HTML shell
-├── package.json         # Dependencies and scripts
-├── pnpm-workspace.yaml  # pnpm workspace and build permissions
-└── vite.config.js       # Vite configuration
-```
-
----
-
-## Usage Guide
-
-### Creating a project
-
-Click **New project** on the dashboard to open a named workspace immediately.
-
-### Redacting text
-
-Paste text directly into the editor or upload a file. Add redaction rules in the **Controls** panel using the format `pattern:replacement` — separate multiple rules with commas. Leave the replacement blank to default to `***`.
-
-### Managing projects
-
-All projects are listed on the dashboard, sorted by most recently updated. Use the search bar to filter by name or content. Click the trash icon on any row to delete (with inline confirmation).
-
-### Exporting
-
-Use the **Copy**, **.txt**, or **Download PDF** buttons in the output panel to export the sanitised result.
-
----
-
-## Browser Support
-
-Requires a modern browser with support for:
-
-- IndexedDB
-- FileReader API
-- CSS Custom Properties
-
-Works on Chrome, Firefox, Safari, and Edge.
 
 ---
 
