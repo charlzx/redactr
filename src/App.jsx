@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
     Upload, Download, FileText, Settings, Type,
     CaseSensitive, WholeWord, Loader, FileDown,
@@ -143,6 +143,9 @@ const App = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [newProjectName, setNewProjectName] = useState('');
+    const [isDashboardProcessingFile, setIsDashboardProcessingFile] = useState(false);
+    const [dashboardImportedFileName, setDashboardImportedFileName] = useState('');
+    const dashboardFileInputRef = useRef(null);
 
     // ── Load external libs ────────────────────────────────────────────────────
     useEffect(() => {
@@ -265,6 +268,48 @@ const App = () => {
         await deleteProject(id);
         setProjects(prev => prev.filter(p => p.id !== id));
         if (activeProjectId === id) { setActiveProjectId(null); setCurrentView('dashboard'); }
+    };
+
+    const handleDashboardImportClick = () => {
+        dashboardFileInputRef.current?.click();
+    };
+
+    const handleDashboardFileUpload = async (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+        event.target.value = null;
+
+        setIsDashboardProcessingFile(true);
+        setDashboardImportedFileName(file.name);
+
+        try {
+            const text = await extractTextFromFile(file);
+            let name = file.name;
+            const lastDot = name.lastIndexOf('.');
+            if (lastDot !== -1) {
+                name = name.slice(0, lastDot);
+            }
+            const projName = name || 'Imported Project';
+
+            const proj = {
+                id: Date.now().toString(),
+                name: projName,
+                originalText: text,
+                wordsToRedact: '',
+                isCaseSensitive: false,
+                isWholeWord: true,
+                createdAt: Date.now(),
+                updatedAt: Date.now()
+            };
+            await saveProject(proj);
+            setProjects(prev => [proj, ...prev]);
+            openProject(proj);
+        } catch (err) {
+            alert(err || 'Failed to read the file.');
+        } finally {
+            setIsDashboardProcessingFile(false);
+            setDashboardImportedFileName('');
+        }
     };
 
     // ── File handlers ─────────────────────────────────────────────────────────
@@ -407,6 +452,15 @@ const App = () => {
     if (currentView === 'dashboard') {
         return (
             <div style={{ minHeight: '100dvh', background: 'hsl(var(--background))', color: 'hsl(var(--foreground))', position: 'relative' }}>
+                {isDashboardProcessingFile && (
+                    <div style={{ position: 'fixed', inset: 0, background: 'hsl(var(--background) / 0.85)', backdropFilter: 'blur(8px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 100, gap: '16px' }}>
+                        <Loader size={36} style={{ animation: 'spin 1s linear infinite', color: 'hsl(var(--accent))' }} />
+                        <div style={{ textAlign: 'center' }}>
+                            <p style={{ fontSize: '1rem', fontWeight: 600, color: 'hsl(var(--foreground))', margin: 0 }}>Extracting text…</p>
+                            {dashboardImportedFileName && <p style={{ fontSize: '0.8125rem', color: 'hsl(var(--muted-foreground))', marginTop: '6px' }}>{dashboardImportedFileName}</p>}
+                        </div>
+                    </div>
+                )}
                 <main style={{ margin: '0 auto', maxWidth: '720px', padding: '64px 24px', display: 'flex', flexDirection: 'column', minHeight: '100dvh' }} className="animate-in">
 
                     {/* Theme toggle — top right */}
@@ -434,6 +488,21 @@ const App = () => {
                         </p>
                         <div style={{ marginTop: '20px', display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
                             <button
+                                onClick={handleDashboardImportClick}
+                                style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                    background: 'transparent', color: 'hsl(var(--foreground))',
+                                    border: '1px solid hsl(var(--border))', borderRadius: '6px', padding: '8px 14px',
+                                    fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer',
+                                    transition: 'background 0.15s'
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.background = 'hsl(var(--muted))'}
+                                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                            >
+                                <Upload size={15} />
+                                Import file
+                            </button>
+                            <button
                                 onClick={() => setIsCreateModalOpen(true)}
                                 style={{
                                     display: 'inline-flex', alignItems: 'center', gap: '6px',
@@ -448,6 +517,13 @@ const App = () => {
                                 <Plus size={15} />
                                 New project
                             </button>
+                            <input
+                                ref={dashboardFileInputRef}
+                                type="file"
+                                onChange={handleDashboardFileUpload}
+                                accept=".txt,.csv,.md,.docx,.pdf"
+                                style={{ display: 'none' }}
+                            />
                         </div>
                     </div>
 
@@ -495,19 +571,35 @@ const App = () => {
                                     </div>
                                     <h3 style={{ fontWeight: 600, fontSize: '0.9375rem', margin: '0 0 8px 0' }}>No projects yet</h3>
                                     <p style={{ fontSize: '0.875rem', color: 'hsl(var(--muted-foreground))', maxWidth: '320px', lineHeight: 1.5, margin: '0 0 20px 0' }}>
-                                        Create a project to start redacting. All data is stored locally in your browser.
+                                        Create a project or import a file to start redacting. All data is stored locally in your browser.
                                     </p>
-                                    <button
-                                        onClick={() => setIsCreateModalOpen(true)}
-                                        style={{
-                                            display: 'inline-flex', alignItems: 'center', gap: '6px',
-                                            background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))',
-                                            border: 'none', borderRadius: '6px', padding: '8px 14px',
-                                            fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer'
-                                        }}
-                                    >
-                                        <Plus size={14} /> New project
-                                    </button>
+                                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                                        <button
+                                            onClick={handleDashboardImportClick}
+                                            style={{
+                                                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                                background: 'transparent', color: 'hsl(var(--foreground))',
+                                                border: '1px solid hsl(var(--border))', borderRadius: '6px', padding: '8px 14px',
+                                                fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer',
+                                                transition: 'background 0.15s'
+                                            }}
+                                            onMouseEnter={e => e.currentTarget.style.background = 'hsl(var(--muted))'}
+                                            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                                        >
+                                            <Upload size={14} /> Import file
+                                        </button>
+                                        <button
+                                            onClick={() => setIsCreateModalOpen(true)}
+                                            style={{
+                                                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                                background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))',
+                                                border: 'none', borderRadius: '6px', padding: '8px 14px',
+                                                fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer'
+                                            }}
+                                        >
+                                            <Plus size={14} /> New project
+                                        </button>
+                                    </div>
                                 </div>
                             ) : filtered.length === 0 ? (
                                 <div style={{ padding: '48px 24px', textAlign: 'center', fontSize: '0.875rem', color: 'hsl(var(--muted-foreground))', border: '1px dashed hsl(var(--border))', borderRadius: '12px' }}>
